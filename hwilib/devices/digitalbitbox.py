@@ -15,7 +15,7 @@ import sys
 import time
 
 from ..hwwclient import HardwareWalletClient
-from ..errors import ActionCanceledError, BadArgumentError, DeviceFailureError, DeviceAlreadyInitError, DEVICE_NOT_INITIALIZED, DeviceNotReadyError, HWWError, NoPasswordError, UnavailableActionError, UNKNOWN_ERROR, common_err_msgs, handle_errors
+from ..errors import ActionCanceledError, BadArgumentError, DeviceFailureError, DeviceAlreadyInitError, DEVICE_NOT_INITIALIZED, DeviceNotReadyError, HWWError, NoPasswordError, UnavailableActionError, UNKNWON_DEVICE_TYPE, UNKNOWN_ERROR, common_err_msgs, handle_errors
 from ..serializations import CTransaction, PSBT, hash256, hash160, ser_sig_der, ser_sig_compact, ser_compact_size
 from ..base58 import get_xpub_fingerprint, decode, to_address, xpub_main_2_test, get_xpub_fingerprint_hex
 
@@ -29,7 +29,8 @@ HWW_CID = 0xFF000000
 HWW_CMD = 0x80 + 0x40 + 0x01
 
 DBB_VENDOR_ID = 0x03eb
-DBB_DEVICE_ID = 0x2402
+DBB_1_DEVICE_ID = 0x2402
+DBB_2_DEVICE_ID = 0x2403
 
 # Errors codes from the device
 bad_args = [
@@ -574,12 +575,12 @@ class DigitalbitboxClient(HardwareWalletClient):
 
 def enumerate(password=''):
     results = []
-    devices = hid.enumerate(DBB_VENDOR_ID, DBB_DEVICE_ID)
+    devices = hid.enumerate(DBB_VENDOR_ID)
     # Try connecting to simulator
     try:
         dev = BitboxSimulator('127.0.0.1', 35345)
         res = dev.send_recv(b'{"device" : "info"}')
-        devices.append({'path': b'udp:127.0.0.1:35345', 'interface_number': 0})
+        devices.append({'path': b'udp:127.0.0.1:35345', 'interface_number': 0, 'product_id': DBB_1_DEVICE_ID})
         dev.close()
     except:
         pass
@@ -590,25 +591,36 @@ def enumerate(password=''):
 
             path = d['path'].decode()
             d_data['type'] = 'digitalbitbox'
-            d_data['model'] = 'digitalbitbox_01'
-            if path == 'udp:127.0.0.1:35345':
-                d_data['model'] += '_simulator'
-            d_data['path'] = path
 
             client = None
-            with handle_errors(common_err_msgs["enumerate"], d_data):
-                client = DigitalbitboxClient(path, password)
+            if d['product_id'] == DBB_1_DEVICE_ID:
+                d_data['model'] = 'digitalbitbox_01'
+                if path == 'udp:127.0.0.1:35345':
+                    d_data['model'] += '_simulator'
+                d_data['path'] = path
 
-                # Check initialized
-                reply = send_encrypt('{"device" : "info"}', password, client.device)
-                if 'error' in reply and reply['error']['code'] == 101:
-                    d_data['error'] = 'Not initialized'
-                    d_data['code'] = DEVICE_NOT_INITIALIZED
-                else:
-                    master_xpub = client.get_pubkey_at_path('m/0h')['xpub']
-                    d_data['fingerprint'] = get_xpub_fingerprint_hex(master_xpub)
-                d_data['needs_pin_sent'] = False
-                d_data['needs_passphrase_sent'] = True
+                with handle_errors(common_err_msgs["enumerate"], d_data):
+                    client = DigitalbitboxClient(path, password)
+
+                    # Check initialized
+                    reply = send_encrypt('{"device" : "info"}', password, client.device)
+                    if 'error' in reply and reply['error']['code'] == 101:
+                        d_data['error'] = 'Not initialized'
+                        d_data['code'] = DEVICE_NOT_INITIALIZED
+                    else:
+                        master_xpub = client.get_pubkey_at_path('m/0h')['xpub']
+                        d_data['fingerprint'] = get_xpub_fingerprint_hex(master_xpub)
+                    d_data['needs_pin_sent'] = False
+                    d_data['needs_passphrase_sent'] = True
+
+            elif d['product_id'] == DBB_2_DEVICE_ID:
+                d_data['model'] = 'digitalbitbox_02'
+                d_data['path'] = path
+                d_data['error'] = 'Full suppport not yet enabled'
+                d_data['code'] = UNKNWON_DEVICE_TYPE
+            else:
+                # We don't know this, skip it
+                continue
 
             if client:
                 client.close()
