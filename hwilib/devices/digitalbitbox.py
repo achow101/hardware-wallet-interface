@@ -393,6 +393,65 @@ class Digitalbitbox1Client(HardwareWalletClient):
     def send_pin(self, pin):
         raise UnavailableActionError('The Digital Bitbox does not need a PIN sent from the host')
 
+# This class extends the HardwareWalletClient for Digital Bitbox 2 specific things
+class Digitalbitbox2Client(HardwareWalletClient):
+
+    def __init__(self, path, password):
+        super(Digitalbitbox2Client, self).__init__(path, password)
+
+    # Must return a dict with the xpub
+    # Retrieves the public key at the specified BIP 32 derivation path
+    @digitalbitbox_exception
+    def get_pubkey_at_path(self, path):
+        raise NotImplementedError('The Digitalbitbox2Client does not implement this method')
+
+    # Must return a hex string with the signed transaction
+    # The tx must be in the PSBT format
+    @digitalbitbox_exception
+    def sign_tx(self, tx):
+        raise NotImplementedError('The Digitalbitbox2Client does not implement this method')
+
+    # Must return a base64 encoded string with the signed message
+    # The message can be any string
+    @digitalbitbox_exception
+    def sign_message(self, message, keypath):
+        raise NotImplementedError('The Digitalbitbox2Client does not implement this method')
+
+    # Display address of specified type on the device. Only supports single-key based addresses.
+    def display_address(self, keypath, p2sh_p2wpkh, bech32):
+        raise NotImplementedError('The Digitalbitbox2Client does not implement this method')
+
+    # Setup a new device
+    @digitalbitbox_exception
+    def setup_device(self, label='', passphrase=''):
+        raise NotImplementedError('The Digitalbitbox2Client does not implement this method')
+
+    # Wipe this device
+    @digitalbitbox_exception
+    def wipe_device(self):
+        raise NotImplementedError('The Digitalbitbox2Client does not implement this method')
+
+    # Restore device from mnemonic or xprv
+    def restore_device(self, label=''):
+        raise NotImplementedError('The Digitalbitbox2Client does not implement this method')
+
+    # Begin backup process
+    @digitalbitbox_exception
+    def backup_device(self, label='', passphrase=''):
+        raise NotImplementedError('The Digitalbitbox2Client does not implement this method')
+
+    # Close the device
+    def close(self):
+        raise NotImplementedError('The Digitalbitbox2Client does not implement this method')
+
+    # Prompt pin
+    def prompt_pin(self):
+        raise NotImplementedError('The Digitalbitbox2Client does not implement this method')
+
+    # Send pin
+    def send_pin(self, pin):
+        raise NotImplementedError('The Digitalbitbox2Client does not implement this method')
+
 # This class extends the HardwareWalletClient for Digital Bitbox specific things
 class DigitalbitboxClient(HardwareWalletClient):
 
@@ -409,6 +468,8 @@ class DigitalbitboxClient(HardwareWalletClient):
 
             if prod_id == DBB_1_DEVICE_ID:
                 self.client = Digitalbitbox1Client(path, password)
+            elif device['product_id'] == DBB_2_DEVICE_ID:
+                self.client = Digitalbitbox2Client(path, password)
             else:
                 raise UnknownDeviceError('Specified device is not a known Digital Bitbox device.')
 
