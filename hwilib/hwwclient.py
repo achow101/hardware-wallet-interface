@@ -32,6 +32,11 @@ class HardwareWalletClient(object):
         raise NotImplementedError('The HardwareWalletClient base class does not '
             'implement this method')
 
+    # Display address of specified type on the device. Only supports single-key based addresses.
+    def display_address(self, keypath, p2sh_p2wpkh, bech32):
+        raise NotImplementedError('The HardwareWalletClient base class does not '
+            'implement this method')
+
     # Setup a new device
     def setup_device(self, label='', passphrase=''):
         raise NotImplementedError('The HardwareWalletClient base class does not '
@@ -60,5 +65,5 @@ class HardwareWalletClient(object):
         raise NotImplementedError('The HardwareWalletClient base class does not implement this method')
 
     # Send pin
-    def send_pin(self):
+    def send_pin(self, pin):
         raise NotImplementedError('The HardwareWalletClient base class does not implement this method')
