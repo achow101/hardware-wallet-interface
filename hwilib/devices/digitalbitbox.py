@@ -107,11 +107,11 @@ def stretch_backup_key(password):
 def format_backup_filename(name):
     return '{}-{}.pdf'.format(name, time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime()))
 
-# This class extends the HardwareWalletClient for Digital Bitbox specific things
-class DigitalbitboxClient(HardwareWalletClient):
+# This class extends the HardwareWalletClient for Digital Bitbox 1 specific things
+class Digitalbitbox1Client(HardwareWalletClient):
 
     def __init__(self, path, password):
-        super(DigitalbitboxClient, self).__init__(path, password)
+        super(Digitalbitbox1Client, self).__init__(path, password)
         if not password:
             raise NoPasswordError('Password must be supplied for digital BitBox')
         if path.startswith('udp:'):
@@ -393,6 +393,85 @@ class DigitalbitboxClient(HardwareWalletClient):
     def send_pin(self, pin):
         raise UnavailableActionError('The Digital Bitbox does not need a PIN sent from the host')
 
+# This class extends the HardwareWalletClient for Digital Bitbox specific things
+class DigitalbitboxClient(HardwareWalletClient):
+
+    def __init__(self, path, password):
+        self.client = None
+        super(DigitalbitboxClient, self).__init__(path, password)
+        if path.startswith('udp:'):
+            self.client = Digitalbitbox1Client(path, password)
+        else:
+            device = hid.device()
+            prod_id = device['product_id']
+            device.open_path(path.encode())
+            device.close()
+
+            if prod_id == DBB_1_DEVICE_ID:
+                self.client = Digitalbitbox1Client(path, password)
+            else:
+                raise UnknownDeviceError('Specified device is not a known Digital Bitbox device.')
+
+    # Must return a dict with the xpub
+    # Retrieves the public key at the specified BIP 32 derivation path
+    def get_pubkey_at_path(self, path):
+        return self.client.get_pubkey_at_path(path)
+
+    # Must return a hex string with the signed transaction
+    # The tx must be in the combined unsigned transaction format
+    def sign_tx(self, tx):
+        return self.client.sign_tx(tx)
+
+    # Must return a base64 encoded string with the signed message
+    # The message can be any string. keypath is the bip 32 derivation path for the key to sign with
+    def sign_message(self, message, keypath):
+        return self.client.sign_message(message, keypath)
+
+    # Display address of specified type on the device. Only supports single-key based addresses.
+    def display_address(self, keypath, p2sh_p2wpkh, bech32):
+        return self.client.display_address(keypath, p2sh_p2wpkh, bech32)
+
+    # Setup a new device
+    def setup_device(self, label='', passphrase=''):
+        return self.client.setup_device(label, passphrase)
+
+    # Wipe this device
+    def wipe_device(self):
+        return self.client.wipe_device()
+
+    # Restore device from mnemonic or xprv
+    def restore_device(self, label=''):
+        return self.client.restore_device(label)
+
+    # Begin backup process
+    def backup_device(self, label='', passphrase=''):
+        return self.client.backup_device(label, passphrase)
+
+    # Close the device
+    def close(self):
+        return self.client.close()
+
+    # Prompt pin
+    def prompt_pin(self):
+        return self.client.prompt_pin()
+
+    # Send pin
+    def send_pin(self, pin):
+        return self.client.send_pin(pin)
+
+    # pass through changes to is_testnet to the underlying client
+    @property
+    def is_testnet(self):
+        if self.client:
+            return self.client.is_testnet
+        else:
+            return False
+
+    @is_testnet.setter
+    def is_testnet(self, value):
+        if self.client:
+            self.client.is_testnet = value
+
 def enumerate(password=''):
     results = []
     devices = hid.enumerate(DBB_VENDOR_ID)
@@ -420,7 +499,7 @@ def enumerate(password=''):
                 d_data['path'] = path
 
                 with handle_errors(common_err_msgs["enumerate"], d_data):
-                    client = DigitalbitboxClient(path, password)
+                    client = Digitalbitbox1Client(path, password)
 
                     # Check initialized
                     reply = send_encrypt('{"device" : "info"}', password, client.device)
