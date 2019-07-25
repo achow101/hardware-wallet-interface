@@ -15,6 +15,7 @@ from ..errors import ActionCanceledError, BadArgumentError, DeviceFailureError, 
 from ..serializations import CTransaction, PSBT, hash256, hash160, ser_sig_der, ser_sig_compact, ser_compact_size
 from ..base58 import get_xpub_fingerprint, decode, to_address, xpub_main_2_test, get_xpub_fingerprint_hex
 from .bitbox01.dbb import BitboxSimulator, DBB_VENDOR_ID, DBB_1_DEVICE_ID, DBB_2_DEVICE_ID, send_encrypt, send_plain
+from .bitbox02.bitbox02 import BitBox02
 
 # Errors codes from the device
 bad_args = [
@@ -393,11 +394,21 @@ class Digitalbitbox1Client(HardwareWalletClient):
     def send_pin(self, pin):
         raise UnavailableActionError('The Digital Bitbox does not need a PIN sent from the host')
 
+# Callback to handle pairint code
+def show_pairing_callback(code):
+    print(code, file=sys.stderr)
+
 # This class extends the HardwareWalletClient for Digital Bitbox 2 specific things
 class Digitalbitbox2Client(HardwareWalletClient):
 
     def __init__(self, path, password):
         super(Digitalbitbox2Client, self).__init__(path, password)
+        info = {}
+        for d in hid.enumerate(DBB_VENDOR_ID, DBB_2_DEVICE_ID):
+            if d['path'] == path.encode():
+                info = d
+                break
+        self.device = BitBox02(info, show_pairing_callback, None)
 
     # Must return a dict with the xpub
     # Retrieves the public key at the specified BIP 32 derivation path
@@ -442,7 +453,7 @@ class Digitalbitbox2Client(HardwareWalletClient):
 
     # Close the device
     def close(self):
-        raise NotImplementedError('The Digitalbitbox2Client does not implement this method')
+        self.device.close()
 
     # Prompt pin
     def prompt_pin(self):
@@ -576,8 +587,19 @@ def enumerate(password=''):
             elif d['product_id'] == DBB_2_DEVICE_ID:
                 d_data['model'] = 'digitalbitbox_02'
                 d_data['path'] = path
-                d_data['error'] = 'Full suppport not yet enabled'
-                d_data['code'] = UNKNWON_DEVICE_TYPE
+
+                with handle_errors(common_err_msgs["enumerate"], d_data):
+                    client = Digitalbitbox2Client(path, password)
+                    info = client.device.device_info()
+                    if not info['initialized']:
+                        d_data['error'] = 'Not initialized'
+                        d_data['code'] = DEVICE_NOT_INITIALIZED
+                    else:
+                        master_xpub = client.get_pubkey_at_path('m/0h')['xpub']
+                        d_data['fingerprint'] = get_xpub_fingerprint_hex(master_xpub)
+                    d_data['needs_pin_sent'] = False
+                    d_data['needs_passphrase_sent'] = False
+
             else:
                 # We don't know this, skip it
                 continue
