@@ -19,7 +19,8 @@ import struct
 from io import BytesIO
 from typing import Any, Dict, Iterable, Optional
 
-import requests
+import httplib2
+import json
 
 from .. import mapping, protobuf
 from ..log import DUMP_BYTES
@@ -32,23 +33,23 @@ TREZORD_ORIGIN_HEADER = {"Origin": "https://python.trezor.io"}
 
 TREZORD_VERSION_MODERN = (2, 0, 25)
 
-CONNECTION = requests.Session()
-CONNECTION.headers.update(TREZORD_ORIGIN_HEADER)
+CONNECTION = httplib2.Http()
 
 
-def call_bridge(uri: str, data=None) -> requests.Response:
+def call_bridge(uri: str, data=None) -> str:
     url = TREZORD_HOST + "/" + uri
-    r = CONNECTION.post(url, data=data)
-    if r.status_code != 200:
+    r, c = CONNECTION.request(url, method='POST', body=data, headers=TREZORD_ORIGIN_HEADER)
+    content = c.decode('utf-8')
+    if r['status'] != '200':
         error_str = "trezord: {} failed with code {}: {}".format(
-            uri, r.status_code, r.json()["error"]
+            uri, r['status'], json.loads(content)["error"]
         )
         raise TransportException(error_str)
-    return r
+    return content
 
 
 def is_legacy_bridge() -> bool:
-    config = call_bridge("configure").json()
+    config = json.loads(call_bridge("configure"))
     version_tuple = tuple(map(int, config["version"].split(".")))
     return version_tuple < TREZORD_VERSION_MODERN
 
@@ -70,7 +71,7 @@ class BridgeHandleModern(BridgeHandle):
 
     def read_buf(self) -> bytes:
         data = self.transport._call("read")
-        return bytes.fromhex(data.text)
+        return bytes.fromhex(data)
 
 
 class BridgeHandleLegacy(BridgeHandle):
@@ -88,7 +89,7 @@ class BridgeHandleLegacy(BridgeHandle):
             raise TransportException("Can't read without write on legacy Bridge")
         try:
             data = self.transport._call("call", data=self.request)
-            return bytes.fromhex(data.text)
+            return bytes.fromhex(data)
         finally:
             self.request = None
 
@@ -125,7 +126,7 @@ class BridgeTransport(Transport):
             raise TransportException("Debug device not available")
         return BridgeTransport(self.device, self.legacy, debug=True)
 
-    def _call(self, action: str, data: str = None) -> requests.Response:
+    def _call(self, action: str, data: str = None):
         session = self.session or "null"
         uri = action + "/" + str(session)
         if self.debug:
@@ -137,14 +138,14 @@ class BridgeTransport(Transport):
         try:
             legacy = is_legacy_bridge()
             return [
-                BridgeTransport(dev, legacy) for dev in call_bridge("enumerate").json()
+                BridgeTransport(dev, legacy) for dev in json.loads(call_bridge("enumerate"))
             ]
         except Exception:
             return []
 
     def begin_session(self) -> None:
-        data = self._call("acquire/" + self.device["path"])
-        self.session = data.json()["session"]
+        data = json.loads(self._call("acquire/" + self.device["path"]))
+        self.session = data["session"]
 
     def end_session(self) -> None:
         if not self.session:
