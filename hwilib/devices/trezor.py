@@ -422,6 +422,18 @@ class TrezorClient(HardwareWalletClient):
         return {'success': True}
 
 def enumerate(password=''):
+    # Only use bridge when it is available
+    from .trezorlib.transport.bridge import BridgeTransport, call_bridge
+    from .trezorlib.transport import all_transports
+
+    try:
+        call_bridge("enumerate")
+        for transport in all_transports():
+            if transport is not BridgeTransport:
+                transport.ENABLED = False
+    except Exception:
+        BridgeTransport.ENABLED = False
+
     results = []
     for dev in enumerate_devices():
         d_data = {}
