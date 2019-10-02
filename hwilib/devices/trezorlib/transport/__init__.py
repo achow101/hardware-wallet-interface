@@ -44,7 +44,7 @@ class TransportException(TrezorException):
 class Transport:
     """Raw connection to a Trezor device.
 
-    Transport subclass represents a kind of communication link: WebUSB
+    Transport subclass represents a kind of communication link: Trezor Bridge, WebUSB
     or USB-HID connection, or UDP socket of listening emulator(s).
     It can also enumerate devices available over this communication link, and return
     them as instances.
@@ -99,13 +99,14 @@ class Transport:
 
 
 def all_transports() -> Iterable[Type[Transport]]:
+    from .bridge import BridgeTransport
     from .hid import HidTransport
     from .udp import UdpTransport
     from .webusb import WebUsbTransport
 
     return set(
         cls
-        for cls in (HidTransport, UdpTransport, WebUsbTransport)
+        for cls in (BridgeTransport, HidTransport, UdpTransport, WebUsbTransport)
         if cls.ENABLED
     )
 
