@@ -285,7 +285,7 @@ class HWIQt(QMainWindow):
                                       self.getkeypool_opts['account'],
                                       self.getkeypool_opts['sh_wpkh'],
                                       self.getkeypool_opts['wpkh'])
-        descriptors = commands.getdescriptors(self.client, 0)
+        descriptors = commands.getdescriptors(self.client, self.getkeypool_opts['account'])
 
         self.ui.keypool_textedit.setPlainText(pprint.pformat(keypool))
         self.ui.desc_textedit.setPlainText(pprint.pformat(descriptors))
