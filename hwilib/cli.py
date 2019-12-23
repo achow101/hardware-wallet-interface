@@ -113,6 +113,8 @@ def process_commands(cli_args):
     parser.add_argument('--stdin', help='Enter commands and arguments via stdin', action='store_true')
     parser.add_argument('--interactive', '-i', help='Use some commands interactively. Currently required for all device configuration commands', action='store_true')
 
+    parser.add_argument('--options', '-o', help='The above options but as a JSON object')
+
     subparsers = parser.add_subparsers(description='Commands', dest='command')
     # work-around to make subparser required
     subparsers.required = True
@@ -206,6 +208,21 @@ def process_commands(cli_args):
 
     # Parse arguments again for anything entered over stdin
     args = parser.parse_args(cli_args)
+
+    # Handle options given as JSON in --options. Prefer command line given arguments over JSON ones
+    if args.options:
+        try:
+            opts = json.loads(args.options)
+            if not isinstance(opts, dict):
+                parser.error('JSON object (dict) needed for --options')
+        except json.JSONDecodeError:
+            parser.error('Invalid JSON given for --options')
+
+        for k, v in opts.items():
+            if not isinstance(v, bool):
+                cli_args.insert(0, str(v))
+            cli_args.insert(0, '--{}'.format(k))
+        args = parser.parse_args(cli_args)
 
     device_path = args.device_path
     device_type = args.device_type
