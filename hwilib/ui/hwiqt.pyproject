@@ -1,3 +1,3 @@
 {
-    "files": ["signpsbtdialog.ui","setpassphrasedialog.ui","mainwindow.ui","displayaddressdialog.ui","signmessagedialog.ui","sendpindialog.ui","getkeypooloptionsdialog.ui","getxpubdialog.ui","devicemandialog.ui","setupdevicedialog.ui"]
+    "files": ["getkeypooloptionsdialog.ui","sendpindialog.ui","mainwindow.ui","displayaddressdialog.ui","getxpubdialog.ui","signpsbtdialog.ui","signmessagedialog.ui","setpassphrasedialog.ui",,"devicemandialog.ui","setupdevicedialog.ui","enumeratedialog.ui"]
 }

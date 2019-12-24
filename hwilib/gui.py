@@ -18,6 +18,7 @@ from .devices.trezorlib.ui import PIN_CONFIRM, PIN_CURRENT, PIN_NEW, PLAIN_WORD_
 try:
     from .ui.ui_devicemandialog import Ui_DeviceManDialog
     from .ui.ui_displayaddressdialog import Ui_DisplayAddressDialog
+    from .ui.ui_enumeratedialog import Ui_EnumerateDialog
     from .ui.ui_getxpubdialog import Ui_GetXpubDialog
     from .ui.ui_getkeypooloptionsdialog import Ui_GetKeypoolOptionsDialog
     from .ui.ui_mainwindow import Ui_MainWindow
@@ -621,6 +622,46 @@ class HWIQt(QMainWindow):
         self.current_dialog.passphrase_changed.connect(self.update_passphrase)
         self.current_dialog.exec_()
 
+class EnumerateDialog(QDialog):
+    def __init__(self, passphrase):
+        super(EnumerateDialog, self).__init__()
+        self.ui = Ui_EnumerateDialog()
+        self.ui.setupUi(self)
+        self.setWindowTitle('Devices List')
+        self.passphrase = passphrase
+        self.selected_device = {'error': 'No device selected', 'code': NO_DEVICE_TYPE}
+        self.populate_devices()
+
+        self.ui.refresh_button.clicked.connect(self.populate_devices)
+
+    @Slot()
+    def populate_devices(self):
+        self.devices = commands.enumerate(self.passphrase)
+        self.ui.devices_list.clear()
+        for dev in self.devices:
+            fingerprint = 'none'
+            if 'fingerprint' in dev:
+                fingerprint = dev['fingerprint']
+            dev_str = '{} fingerprint:{} path:{}'.format(dev['model'], fingerprint, dev['path'])
+            self.ui.devices_list.addItem(dev_str)
+
+        self.accepted.connect(self.enumeratedialog_accepted)
+
+    @Slot()
+    def enumeratedialog_accepted(self):
+        index = self.ui.devices_list.currentRow()
+        if index >= 0:
+            self.selected_device = self.devices[index]
+            if self.passphrase:
+                self.selected_device['password'] = self.passphrase
+        elif len(self.devices) == 0:
+                self.selected_device['error'] = 'No devices available'
+
+def enumerate_handler(args):
+    dialog = EnumerateDialog(args.password)
+    ret = dialog.exec_()
+    return dialog.selected_device
+
 def pinentry_handler(args, client):
     dialog = SendPinDialog(client)
     ret = dialog.exec_()
@@ -642,6 +683,9 @@ def process_gui_commands(cli_args):
     parser.add_argument('--options', '-o', help='The above options but as a JSON object')
 
     subparsers = parser.add_subparsers(description='Commands', dest='command')
+
+    enumerate_parser = subparsers.add_parser('enumerate', help='List available devices')
+    enumerate_parser.set_defaults(func=enumerate_handler)
 
     pinentry_parser = subparsers.add_parser('pinentry', help='Send a PIN to the device')
     pinentry_parser.set_defaults(func=pinentry_handler)
@@ -680,6 +724,10 @@ def process_gui_commands(cli_args):
 
     # Qt setup
     app = QApplication()
+
+    # List all available hardware wallet devices
+    if command == 'enumerate':
+        return args.func(args)
 
     if args.command:
         # Auto detect if we are using fingerprint or type to identify device
