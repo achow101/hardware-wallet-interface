@@ -1,9 +1,14 @@
 #! /usr/bin/env python3
 
+import argparse
+import json
+import logging
 import pprint
+import sys
 
-from . import commands
-from .errors import BadArgumentError, handle_errors, DEVICE_NOT_INITIALIZED
+from . import commands, __version__
+from .cli import HWIArgumentParser
+from .errors import BadArgumentError, handle_errors, DEVICE_CONN_ERROR, DEVICE_NOT_INITIALIZED, NO_DEVICE_TYPE
 from .hwwclient import DeviceFeature
 
 from .devices.trezor import PassphraseUI
@@ -70,6 +75,9 @@ class PinDialog(QDialog):
         self.ui.p8_button.clicked.connect(self.button_clicked(8))
         self.ui.p9_button.clicked.connect(self.button_clicked(9))
 
+        self.accepted.connect(self.sendpindialog_accepted)
+        self.F = bool(do_command(commands.prompt_pin, self.client))
+
     def button_clicked(self, number):
         @Slot()
         def button_clicked_num():
@@ -91,10 +99,19 @@ class SendPinDialog(PinDialog):
         pin = self.ui.pin_lineedit.text()
 
         # Send the pin
-        do_command(commands.send_pin, self.client, pin)
+        res = do_command(commands.send_pin, self.client, pin)
         self.client.close()
         self.client = None
+        if res is None:
+            self.reject()
         self.pin_sent_success.emit()
+
+    def exec_(self):
+        if self.prompt_success:
+            return super().exec_()
+        else:
+            self.reject()
+            return QDialog.Rejected
 
 class TrezorQtUI(PassphraseUI):
     def __init__(self, passphrase):
@@ -604,12 +621,99 @@ class HWIQt(QMainWindow):
         self.current_dialog.passphrase_changed.connect(self.update_passphrase)
         self.current_dialog.exec_()
 
-def main():
+def pinentry_handler(args, client):
+    dialog = SendPinDialog(client)
+    ret = dialog.exec_()
+    return {'success': ret == QDialog.Accepted}
+
+def process_gui_commands(cli_args):
+    parser = HWIArgumentParser(description='Hardware Wallet Interface Qt, version {}.\nInteractively access and send commands to a hardware wallet device with a GUI. Responses are in JSON format.'.format(__version__))
+    parser.add_argument('--device-path', '-d', help='Specify the device path of the device to connect to')
+    parser.add_argument('--device-type', '-t', help='Specify the type of device that will be connected. If `--device-path` not given, the first device of this type enumerated is used.')
+    parser.add_argument('--password', '-p', help='Device password if it has one (e.g. DigitalBitbox)', default='')
+    parser.add_argument('--stdinpass', help='Enter the device password on the command line', action='store_true')
+    parser.add_argument('--testnet', help='Use testnet prefixes', action='store_true')
+    parser.add_argument('--debug', help='Print debug statements', action='store_true')
+    parser.add_argument('--fingerprint', '-f', help='Specify the device to connect to using the first 4 bytes of the hash160 of the master public key. It will connect to the first device that matches this fingerprint.')
+    parser.add_argument('--version', action='version', version='%(prog)s {}'.format(__version__))
+    parser.add_argument('--stdin', help='Enter commands and arguments via stdin', action='store_true')
+    parser.add_argument('--interactive', '-i', help='Use some commands interactively. Currently required for all device configuration commands', action='store_true')
+
+    parser.add_argument('--options', '-o', help='The above options but as a JSON object')
+
+    subparsers = parser.add_subparsers(description='Commands', dest='command')
+
+    pinentry_parser = subparsers.add_parser('pinentry', help='Send a PIN to the device')
+    pinentry_parser.set_defaults(func=pinentry_handler)
+
+    # Parse arguments again for anything entered over stdin
+    args = parser.parse_args(cli_args)
+
+    # Handle options given as JSON in --options. Prefer command line given arguments over JSON ones
+    if args.options:
+        try:
+            opts = json.loads(args.options)
+            if not isinstance(opts, dict):
+                parser.error('JSON object (dict) needed for --options')
+        except json.JSONDecodeError:
+            parser.error('Invalid JSON given for --options')
+
+        for k, v in opts.items():
+            if not isinstance(v, bool):
+                cli_args.insert(0, str(v))
+            cli_args.insert(0, '--{}'.format(k))
+        args = parser.parse_args(cli_args)
+
+    device_path = args.device_path
+    device_type = args.device_type
+    password = args.password
+    command = args.command
+    result = {}
+
+    # Setup debug logging
+    logging.basicConfig(level=logging.DEBUG if args.debug else logging.WARNING)
+
+    # Enter the password on stdin
+    if args.stdinpass:
+        password = getpass.getpass('Enter your device password: ')
+        args.password = password
+
+    # Qt setup
     app = QApplication()
 
-    window = HWIQt()
+    if args.command:
+        # Auto detect if we are using fingerprint or type to identify device
+        if args.fingerprint or (args.device_type and not args.device_path):
+            client = commands.find_device(args.device_path, args.password, args.device_type, args.fingerprint)
+            if not client:
+                return {'error': 'Could not find device with specified fingerprint', 'code': DEVICE_CONN_ERROR}
+        elif args.device_type and args.device_path:
+            with handle_errors(result=result, code=DEVICE_CONN_ERROR):
+                client = commands.get_client(device_type, device_path, password)
+            if 'error' in result:
+                return result
+        else:
+            return {'error': 'You must specify a device type or fingerprint for all commands except enumerate', 'code': NO_DEVICE_TYPE}
 
-    window.refresh_clicked()
+        client.is_testnet = args.testnet
 
-    window.show()
-    app.exec_()
+        # Do the commands
+        with handle_errors(result=result, debug=args.debug):
+            result = args.func(args, client)
+
+        with handle_errors(result=result, debug=args.debug):
+            client.close()
+    else:
+        window = HWIQt()
+
+        window.refresh_clicked()
+
+        window.show()
+        ret = app.exec_()
+        result = {'success': ret == 0}
+
+    return result
+
+def main():
+    result = process_gui_commands(sys.argv[1:])
+    print(json.dumps(result))
