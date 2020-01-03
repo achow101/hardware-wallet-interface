@@ -1,6 +1,6 @@
 # Trezor interaction script
 
-from ..hwwclient import HardwareWalletClient
+from ..hwwclient import DeviceFeature, HardwareWalletClient, SupportedFeatures
 from ..errors import ActionCanceledError, BadArgumentError, DeviceAlreadyInitError, DeviceAlreadyUnlockedError, DeviceConnectionError, DEVICE_NOT_INITIALIZED, DeviceNotReadyError, UnavailableActionError, common_err_msgs, handle_errors
 from .trezorlib.client import TrezorClient as Trezor
 from .trezorlib.debuglink import TrezorClientDebugLink
@@ -432,17 +432,73 @@ class TrezorClient(HardwareWalletClient):
     # Get HWI features for this device
     @classmethod
     def get_features(self):
-        raise NotImplementedError('The {} does not implement this method'.format(self.type))
+        raise UnavailableActionError('A specific Trezor model must be specified to get the features')
 
 class Trezor1Client(TrezorClient):
+
+    # Setup features
+    features = SupportedFeatures()
+    features.getxpub = DeviceFeature.SUPPORTED
+    features.signmessage = DeviceFeature.SUPPORTED
+    features.setup = DeviceFeature.SUPPORTED
+    features.wipe = DeviceFeature.SUPPORTED
+    features.recover = DeviceFeature.SUPPORTED
+    features.backup = DeviceFeature.FIRMWARE_NOT_SUPPORTED
+    features.sign_p2pkh = DeviceFeature.SUPPORTED
+    features.sign_p2sh_p2wpkh = DeviceFeature.SUPPORTED
+    features.sign_p2wpkh = DeviceFeature.SUPPORTED
+    features.sign_multi_p2sh = DeviceFeature.SUPPORTED
+    features.sign_multi_p2sh_p2wsh = DeviceFeature.SUPPORTED
+    features.sign_multi_p2wsh = DeviceFeature.SUPPORTED
+    features.sign_multi_bare = DeviceFeature.FIRMWARE_NOT_SUPPORTED
+    features.sign_arbitrary_bare = DeviceFeature.FIRMWARE_NOT_SUPPORTED
+    features.sign_arbitrary_p2sh = DeviceFeature.FIRMWARE_NOT_SUPPORTED
+    features.sign_arbitrary_p2sh_p2wsh = DeviceFeature.FIRMWARE_NOT_SUPPORTED
+    features.sign_arbitrary_p2wsh = DeviceFeature.FIRMWARE_NOT_SUPPORTED
+    features.sign_coinjoin = DeviceFeature.SUPPORTED
+    features.sign_mixed_segwit = DeviceFeature.SUPPORTED
+    features.display_address = DeviceFeature.SUPPORTED
+
     def __init__(self, path, password=''):
         super(Trezor1Client, self).__init__(path, password)
         self.type = 'Trezor 1'
 
+    @classmethod
+    def get_features(self):
+        return self.features.get_printable_dict()
+
 class TrezorTClient(TrezorClient):
+
+    # Setup features
+    features = SupportedFeatures()
+    features.getxpub = DeviceFeature.SUPPORTED
+    features.signmessage = DeviceFeature.SUPPORTED
+    features.setup = DeviceFeature.SUPPORTED
+    features.wipe = DeviceFeature.SUPPORTED
+    features.recover = DeviceFeature.SUPPORTED
+    features.backup = DeviceFeature.FIRMWARE_NOT_SUPPORTED
+    features.sign_p2pkh = DeviceFeature.SUPPORTED
+    features.sign_p2sh_p2wpkh = DeviceFeature.SUPPORTED
+    features.sign_p2wpkh = DeviceFeature.SUPPORTED
+    features.sign_multi_p2sh = DeviceFeature.SUPPORTED
+    features.sign_multi_p2sh_p2wsh = DeviceFeature.SUPPORTED
+    features.sign_multi_p2wsh = DeviceFeature.SUPPORTED
+    features.sign_multi_bare = DeviceFeature.FIRMWARE_NOT_SUPPORTED
+    features.sign_arbitrary_bare = DeviceFeature.FIRMWARE_NOT_SUPPORTED
+    features.sign_arbitrary_p2sh = DeviceFeature.FIRMWARE_NOT_SUPPORTED
+    features.sign_arbitrary_p2sh_p2wsh = DeviceFeature.FIRMWARE_NOT_SUPPORTED
+    features.sign_arbitrary_p2wsh = DeviceFeature.FIRMWARE_NOT_SUPPORTED
+    features.sign_coinjoin = DeviceFeature.SUPPORTED
+    features.sign_mixed_segwit = DeviceFeature.FIRMWARE_NOT_SUPPORTED
+    features.display_address = DeviceFeature.SUPPORTED
+
     def __init__(self, path, password=''):
         super(TrezorTClient, self).__init__(path, password)
         self.type = 'Trezor T'
+
+    @classmethod
+    def get_features(self):
+        return self.features.get_printable_dict()
 
 def enumerate(password=''):
     results = []
