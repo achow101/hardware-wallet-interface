@@ -429,6 +429,16 @@ class TrezorClient(HardwareWalletClient):
             return {'success': False}
         return {'success': True}
 
+class Trezor1Client(TrezorClient):
+    def __init__(self, path, password=''):
+        super(Trezor1Client, self).__init__(path, password)
+        self.type = 'Trezor 1'
+
+class TrezorTClient(TrezorClient):
+    def __init__(self, path, password=''):
+        super(TrezorTClient, self).__init__(path, password)
+        self.type = 'Trezor T'
+
 def enumerate(password=''):
     results = []
     for dev in enumerate_devices():

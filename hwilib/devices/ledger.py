@@ -74,6 +74,7 @@ class LedgerClient(HardwareWalletClient):
 
     def __init__(self, path, password=''):
         super(LedgerClient, self).__init__(path, password)
+        self.type = 'Ledger Nano S and X'
 
         if path.startswith('tcp'):
             split_path = path.split(':')
@@ -346,6 +347,16 @@ class LedgerClient(HardwareWalletClient):
     # Send pin
     def send_pin(self, pin):
         raise UnavailableActionError('The Ledger Nano S and X do not need a PIN sent from the host')
+
+class LedgerNanoSClient(LedgerClient):
+    def __init__(self, path, password=''):
+        super(LedgerNanoSClient, self).__init__(path, password)
+        self.type = 'Ledger Nano S'
+
+class LedgerNanoXClient(LedgerClient):
+    def __init__(self, path, password=''):
+        super(LedgerNanoXClient, self).__init__(path, password)
+        self.type = 'Ledger Nano X'
 
 def enumerate(password=''):
     results = []
