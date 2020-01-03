@@ -578,6 +578,11 @@ class DigitalbitboxClient(HardwareWalletClient):
     def send_pin(self, pin):
         raise UnavailableActionError('The Digital Bitbox does not need a PIN sent from the host')
 
+    # Get HWI features for this device
+    @classmethod
+    def get_features(self):
+        raise NotImplementedError('The Digital Bitbox does not implement this method')
+
 class Digitalbitbox01Client(DigitalbitboxClient):
     def __init__(self, path, password=''):
         super(Digitalbitbox01Client, self).__init__(path, password)

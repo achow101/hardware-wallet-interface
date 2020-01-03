@@ -237,6 +237,11 @@ class ColdcardClient(HardwareWalletClient):
     def send_pin(self, pin):
         raise UnavailableActionError('The Coldcard does not need a PIN sent from the host')
 
+    # Get HWI features for this device
+    @classmethod
+    def get_features(self):
+        raise NotImplementedError('The Coldcard does not implement this method')
+
 def enumerate(password=''):
     results = []
     devices = hid.enumerate(COINKITE_VID, CKCC_PID)

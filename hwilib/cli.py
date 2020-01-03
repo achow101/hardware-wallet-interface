@@ -1,10 +1,11 @@
 #! /usr/bin/env python3
 
 from .commands import backup_device, displayaddress, enumerate, find_device, \
-    get_client, getmasterxpub, getxpub, getkeypool, getdescriptors, prompt_pin, restore_device, send_pin, setup_device, \
+    get_client_class, get_client, getmasterxpub, getxpub, getkeypool, getdescriptors, prompt_pin, restore_device, send_pin, setup_device, \
     signmessage, signtx, wipe_device, install_udev_rules
 from .errors import (
     handle_errors,
+    BAD_ARGUMENT,
     DEVICE_CONN_ERROR,
     HELP_TEXT,
     MISSING_ARGUMENTS,
@@ -67,6 +68,10 @@ def send_pin_handler(args, client):
 
 def install_udev_rules_handler(args):
     return install_udev_rules('udev', args.location)
+
+def getfeatures_handler(args):
+    client_class = get_client_class(args.device_type)
+    return client_class.get_features()
 
 class HWIHelpFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
     pass
@@ -180,6 +185,9 @@ def process_commands(cli_args):
     sendpin_parser.add_argument('pin', help='The numeric positions of the PIN')
     sendpin_parser.set_defaults(func=send_pin_handler)
 
+    getfeatures_parser = subparsers.add_parser('getfeatures', help='Returns the supported features for the given device type')
+    getfeatures_parser.set_defaults(func=getfeatures_handler)
+
     if sys.platform.startswith("linux"):
         udevrules_parser = subparsers.add_parser('installudevrules', help='Install and load the udev rule files for the hardware wallet devices')
         udevrules_parser.add_argument('--location', help='The path where the udev rules files will be copied', default='/etc/udev/rules.d/')
@@ -223,6 +231,14 @@ def process_commands(cli_args):
     # Install the devices udev rules for Linux
     if command == 'installudevrules':
         with handle_errors(msg="installudevrules failed:", result=result):
+            result = args.func(args)
+        return result
+
+    # Do get features
+    if command == 'getfeatures':
+        if not args.device_type:
+            return {'error': 'Device type needs to be specified to get features', 'code': BAD_ARGUMENT}
+        with handle_errors(result=result, debug=args.debug):
             result = args.func(args)
         return result
 

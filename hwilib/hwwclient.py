@@ -63,3 +63,8 @@ class HardwareWalletClient(object):
     # Send pin
     def send_pin(self):
         raise NotImplementedError('The HardwareWalletClient base class does not implement this method')
+
+    # Get HWI features for this device
+    @classmethod
+    def get_features(self):
+        raise NotImplementedError('The HardwareWalletClient base class does not implement this method')
