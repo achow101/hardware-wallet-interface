@@ -578,6 +578,11 @@ class DigitalbitboxClient(HardwareWalletClient):
     def send_pin(self, pin):
         raise UnavailableActionError('The Digital Bitbox does not need a PIN sent from the host')
 
+class Digitalbitbox01Client(DigitalbitboxClient):
+    def __init__(self, path, password=''):
+        super(Digitalbitbox01Client, self).__init__(path, password)
+        self.type = 'Digital BitBox01'
+
 def enumerate(password=''):
     results = []
     devices = hid.enumerate(DBB_VENDOR_ID, DBB_DEVICE_ID)
