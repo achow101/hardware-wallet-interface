@@ -14,7 +14,7 @@ import socket
 import sys
 import time
 
-from ..hwwclient import HardwareWalletClient
+from ..hwwclient import DeviceFeature, HardwareWalletClient, SupportedFeatures
 from ..errors import ActionCanceledError, BadArgumentError, DeviceFailureError, DeviceAlreadyInitError, DEVICE_NOT_INITIALIZED, DeviceNotReadyError, NoPasswordError, UnavailableActionError, common_err_msgs, handle_errors
 from ..serializations import CTransaction, hash256, ser_sig_der, ser_sig_compact, ser_compact_size
 from ..base58 import get_xpub_fingerprint, xpub_main_2_test, get_xpub_fingerprint_hex
@@ -295,6 +295,29 @@ def format_backup_filename(name):
 
 # This class extends the HardwareWalletClient for Digital Bitbox specific things
 class DigitalbitboxClient(HardwareWalletClient):
+
+    # Setup features
+    features = SupportedFeatures()
+    features.getxpub = DeviceFeature.SUPPORTED
+    features.signmessage = DeviceFeature.SUPPORTED
+    features.setup = DeviceFeature.SUPPORTED
+    features.wipe = DeviceFeature.SUPPORTED
+    features.recover = DeviceFeature.FIRMWARE_NOT_SUPPORTED
+    features.backup = DeviceFeature.SUPPORTED
+    features.sign_p2pkh = DeviceFeature.SUPPORTED
+    features.sign_p2sh_p2wpkh = DeviceFeature.SUPPORTED
+    features.sign_p2wpkh = DeviceFeature.SUPPORTED
+    features.sign_multi_p2sh = DeviceFeature.SUPPORTED
+    features.sign_multi_p2sh_p2wsh = DeviceFeature.SUPPORTED
+    features.sign_multi_p2wsh = DeviceFeature.SUPPORTED
+    features.sign_multi_bare = DeviceFeature.SUPPORTED
+    features.sign_arbitrary_bare = DeviceFeature.SUPPORTED
+    features.sign_arbitrary_p2sh = DeviceFeature.SUPPORTED
+    features.sign_arbitrary_p2sh_p2wsh = DeviceFeature.SUPPORTED
+    features.sign_arbitrary_p2wsh = DeviceFeature.SUPPORTED
+    features.sign_coinjoin = DeviceFeature.SUPPORTED
+    features.sign_mixed_segwit = DeviceFeature.SUPPORTED
+    features.display_address = DeviceFeature.FIRMWARE_NOT_SUPPORTED
 
     def __init__(self, path, password):
         super(DigitalbitboxClient, self).__init__(path, password)
@@ -581,7 +604,7 @@ class DigitalbitboxClient(HardwareWalletClient):
     # Get HWI features for this device
     @classmethod
     def get_features(self):
-        raise NotImplementedError('The Digital Bitbox does not implement this method')
+        return self.features.get_printable_dict()
 
 class Digitalbitbox01Client(DigitalbitboxClient):
     def __init__(self, path, password=''):
