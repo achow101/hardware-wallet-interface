@@ -429,6 +429,11 @@ class TrezorClient(HardwareWalletClient):
             return {'success': False}
         return {'success': True}
 
+    # Get HWI features for this device
+    @classmethod
+    def get_features(self):
+        raise NotImplementedError('The {} does not implement this method'.format(self.type))
+
 class Trezor1Client(TrezorClient):
     def __init__(self, path, password=''):
         super(Trezor1Client, self).__init__(path, password)

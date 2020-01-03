@@ -348,6 +348,11 @@ class LedgerClient(HardwareWalletClient):
     def send_pin(self, pin):
         raise UnavailableActionError('The {} does not need a PIN sent from the host'.format(self.type))
 
+    # Get HWI features for this device
+    @classmethod
+    def get_features(self):
+        raise NotImplementedError('The Ledger Nano S and X does not implement this method')
+
 class LedgerNanoSClient(LedgerClient):
     def __init__(self, path, password=''):
         super(LedgerNanoSClient, self).__init__(path, password)
