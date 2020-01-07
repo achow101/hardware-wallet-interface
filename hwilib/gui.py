@@ -357,6 +357,7 @@ class HWIQt(QMainWindow):
         if 'code' in self.device_info and self.device_info['code'] == DEVICE_NOT_INITIALIZED:
             self.clear_info()
             QMessageBox.information(None, "Not initialized yet", 'Device is not initalized yet')
+            self.ui.device_man_button.setEnabled(True)
             return
 
         # do getkeypool and getdescriptors
