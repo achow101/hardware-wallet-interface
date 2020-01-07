@@ -4,6 +4,7 @@ import pprint
 
 from . import commands
 from .errors import handle_errors, DEVICE_NOT_INITIALIZED
+from .hwwclient import DeviceFeature
 
 try:
     from .ui.ui_devicemandialog import Ui_DeviceManDialog
@@ -211,6 +212,32 @@ class DeviceManDialog(QDialog):
         self.ui.setupUi(self)
         self.setWindowTitle('Device Management')
         self.client = client
+
+        features = self.client.get_features()
+        if features['wipe'] == DeviceFeature.SUPPORTED:
+            self.ui.wipe_button.setEnabled(True)
+            self.ui.wipe_button.setToolTip('')
+        elif features['wipe'] == DeviceFeature.NOT_SUPPORTED:
+            self.ui.wipe_button.setToolTip('HWI does not support wiping for this device yet.')
+
+        if features['setup'] == DeviceFeature.SUPPORTED:
+            self.ui.setup_button.setEnabled(True)
+            self.ui.setup_button.setToolTip('')
+        elif features['setup'] == DeviceFeature.NOT_SUPPORTED:
+            self.ui.setup_button.setToolTip('HWI does not support stting up for this device yet.')
+
+        if features['recover'] == DeviceFeature.SUPPORTED:
+            self.ui.recover_button.setEnabled(True)
+            self.ui.recover_button.setToolTip('')
+        elif features['recover'] == DeviceFeature.NOT_SUPPORTED:
+            self.ui.recover_button.setToolTip('HWI does not support recovering for this device yet.')
+
+        if features['backup'] == DeviceFeature.SUPPORTED:
+            self.ui.backup_button.setEnabled(True)
+            self.ui.backup_button.setToolTip('')
+        elif features['backup'] == DeviceFeature.NOT_SUPPORTED:
+            self.ui.backup_button.setToolTip('HWI does not support backing up for this device yet.')
+
 
 class HWIQt(QMainWindow):
     def __init__(self):
