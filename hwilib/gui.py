@@ -206,6 +206,8 @@ class GetKeypoolOptionsDialog(QDialog):
             self.ui.account_spinbox.setEnabled(False)
 
 class DeviceManDialog(QDialog):
+    wipe_success = Signal()
+
     def __init__(self, client):
         super(DeviceManDialog, self).__init__()
         self.ui = Ui_DeviceManDialog()
@@ -219,6 +221,7 @@ class DeviceManDialog(QDialog):
             self.ui.wipe_button.setToolTip('')
         elif features['wipe'] == DeviceFeature.NOT_SUPPORTED:
             self.ui.wipe_button.setToolTip('HWI does not support wiping for this device yet.')
+        self.ui.wipe_button.clicked.connect(self.handle_wipe)
 
         if features['setup'] == DeviceFeature.SUPPORTED:
             self.ui.setup_button.setEnabled(True)
@@ -238,6 +241,13 @@ class DeviceManDialog(QDialog):
         elif features['backup'] == DeviceFeature.NOT_SUPPORTED:
             self.ui.backup_button.setToolTip('HWI does not support backing up for this device yet.')
 
+    @Slot()
+    def handle_wipe(self):
+        response = QMessageBox.question(self, 'Confirm Wipe', 'Are you sure you want to Wipe this device?')
+        if response == QMessageBox.Yes:
+            do_command(commands.wipe_device, self.client)
+            self.wipe_success.emit()
+            self.accept()
 
 class HWIQt(QMainWindow):
     def __init__(self):
@@ -424,6 +434,7 @@ class HWIQt(QMainWindow):
     @Slot()
     def show_devicemandialog(self):
         self.current_dialog = DeviceManDialog(self.client)
+        self.current_dialog.wipe_success.connect(self.refresh_clicked)
         self.current_dialog.exec_()
 
 def main():
