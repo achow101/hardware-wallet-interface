@@ -64,6 +64,7 @@ class PassphraseUI:
         self.prompt_shown = False
         self.always_prompt = False
         self.return_passphrase = True
+        self.interactive = False
 
     def button_request(self, code):
         if not self.prompt_shown:
@@ -72,7 +73,26 @@ class PassphraseUI:
             self.prompt_shown = True
 
     def get_pin(self, code=None):
-        raise NotImplementedError('get_pin is not needed')
+        if not self.interactive:
+            raise NotImplementedError('get_pin is not needed')
+
+        if code == PIN_CURRENT:
+            desc = "current PIN"
+        elif code == PIN_NEW:
+            desc = "new PIN"
+        elif code == PIN_CONFIRM:
+            desc = "new PIN again"
+        else:
+            desc = "PIN"
+
+        echo(PIN_MATRIX_DESCRIPTION)
+
+        while True:
+            pin = prompt("Please enter {}".format(desc), hide_input=True)
+            if not pin.isdigit():
+                echo("Non-numerical PIN provided, please try again")
+            else:
+                return pin
 
     def disallow_passphrase(self):
         self.return_passphrase = False
@@ -81,6 +101,9 @@ class PassphraseUI:
         if self.return_passphrase:
             return self.passphrase
         raise ValueError('Passphrase from Host is not allowed for Trezor T')
+
+    def set_interactive(self, interactive):
+        self.interactive = interactive
 
 def mnemonic_words(expand=False, language="english"):
     if expand:

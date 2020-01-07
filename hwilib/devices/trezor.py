@@ -6,14 +6,13 @@ from .trezorlib.client import TrezorClient as Trezor
 from .trezorlib.debuglink import TrezorClientDebugLink
 from .trezorlib.exceptions import Cancelled
 from .trezorlib.transport import enumerate_devices, get_transport, TREZOR_VENDOR_IDS
-from .trezorlib.ui import echo, PassphraseUI, mnemonic_words, PIN_CURRENT, PIN_NEW, PIN_CONFIRM, PIN_MATRIX_DESCRIPTION, prompt
+from .trezorlib.ui import PassphraseUI, mnemonic_words, PIN_MATRIX_DESCRIPTION
 from .trezorlib import tools, btc, device
 from .trezorlib import messages as proto
 from ..base58 import get_xpub_fingerprint, to_address, xpub_main_2_test, get_xpub_fingerprint_hex
 from ..serializations import CTxOut, ser_uint256
 from .. import bech32
 from usb1 import USBErrorNoDevice
-from types import MethodType
 
 import base64
 import logging
@@ -66,25 +65,6 @@ def trezor_exception(f):
         except USBErrorNoDevice:
             raise DeviceConnectionError('Device disconnected')
     return func
-
-def interactive_get_pin(self, code=None):
-    if code == PIN_CURRENT:
-        desc = "current PIN"
-    elif code == PIN_NEW:
-        desc = "new PIN"
-    elif code == PIN_CONFIRM:
-        desc = "new PIN again"
-    else:
-        desc = "PIN"
-
-    echo(PIN_MATRIX_DESCRIPTION)
-
-    while True:
-        pin = prompt("Please enter {}".format(desc), hide_input=True)
-        if not pin.isdigit():
-            echo("Non-numerical PIN provided, please try again")
-        else:
-            return pin
 
 # This class extends the HardwareWalletClient for Trezor specific things
 class TrezorClient(HardwareWalletClient):
@@ -362,10 +342,7 @@ class TrezorClient(HardwareWalletClient):
     @trezor_exception
     def setup_device(self, label='', passphrase=''):
         self.client.init_device()
-        if not self.simulator:
-            # Use interactive_get_pin
-            self.client.ui.get_pin = MethodType(interactive_get_pin, self.client.ui)
-
+        self.client.ui.set_interactive(True)
         if self.client.features.initialized:
             raise DeviceAlreadyInitError('Device is already initialized. Use wipe first and try again')
         device.reset(self.client, passphrase_protection=bool(self.password))
@@ -382,10 +359,7 @@ class TrezorClient(HardwareWalletClient):
     @trezor_exception
     def restore_device(self, label=''):
         self.client.init_device()
-        if not self.simulator:
-            # Use interactive_get_pin
-            self.client.ui.get_pin = MethodType(interactive_get_pin, self.client.ui)
-
+        self.client.ui.set_interactive(True)
         device.recover(self.client, label=label, input_callback=mnemonic_words(), passphrase_protection=bool(self.password))
         return {'success': True}
 
