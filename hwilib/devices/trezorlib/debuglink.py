@@ -186,6 +186,9 @@ class DebugUI:
             return self.passphrase
         raise ValueError('Passphrase from Host is not allowed for Trezor T')
 
+    def set_interactive(self, interactive):
+        pass
+
 
 class TrezorClientDebugLink(TrezorClient):
     # This class implements automatic responses
