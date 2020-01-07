@@ -6,6 +6,7 @@ from . import commands
 from .errors import handle_errors, DEVICE_NOT_INITIALIZED
 
 try:
+    from .ui.ui_devicemandialog import Ui_DeviceManDialog
     from .ui.ui_displayaddressdialog import Ui_DisplayAddressDialog
     from .ui.ui_getxpubdialog import Ui_GetXpubDialog
     from .ui.ui_getkeypooloptionsdialog import Ui_GetKeypoolOptionsDialog
@@ -203,6 +204,14 @@ class GetKeypoolOptionsDialog(QDialog):
             self.ui.path_lineedit.setEnabled(True)
             self.ui.account_spinbox.setEnabled(False)
 
+class DeviceManDialog(QDialog):
+    def __init__(self, client):
+        super(DeviceManDialog, self).__init__()
+        self.ui = Ui_DeviceManDialog()
+        self.ui.setupUi(self)
+        self.setWindowTitle('Device Management')
+        self.client = client
+
 class HWIQt(QMainWindow):
     def __init__(self):
         super(HWIQt, self).__init__()
@@ -235,6 +244,7 @@ class HWIQt(QMainWindow):
         self.ui.signmsg_button.clicked.connect(self.show_signmessagedialog)
         self.ui.display_addr_button.clicked.connect(self.show_displayaddressdialog)
         self.ui.getkeypool_opts_button.clicked.connect(self.show_getkeypooloptionsdialog)
+        self.ui.device_man_button.clicked.connect(self.show_devicemandialog)
 
         self.ui.enumerate_combobox.currentIndexChanged.connect(self.get_client_and_device_info)
 
@@ -244,6 +254,7 @@ class HWIQt(QMainWindow):
         self.ui.signmsg_button.setEnabled(False)
         self.ui.display_addr_button.setEnabled(False)
         self.ui.getkeypool_opts_button.setEnabled(False)
+        self.ui.device_man_button.setEnabled(False)
         self.ui.keypool_textedit.clear()
         self.ui.desc_textedit.clear()
 
@@ -289,6 +300,7 @@ class HWIQt(QMainWindow):
         self.ui.signmsg_button.setEnabled(True)
         self.ui.display_addr_button.setEnabled(True)
         self.ui.getkeypool_opts_button.setEnabled(True)
+        self.ui.device_man_button.setEnabled(True)
 
         # Get the client
         self.device_info = self.devices[index - 1]
@@ -381,6 +393,11 @@ class HWIQt(QMainWindow):
             self.getkeypool_opts['account_used'] = False
         self.current_dialog = None
         self.get_device_info()
+
+    @Slot()
+    def show_devicemandialog(self):
+        self.current_dialog = DeviceManDialog(self.client)
+        self.current_dialog.exec_()
 
 def main():
     app = QApplication()
