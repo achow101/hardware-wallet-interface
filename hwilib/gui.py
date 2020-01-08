@@ -43,15 +43,11 @@ class SetPassphraseDialog(QDialog):
 
         self.ui.passphrase_lineedit.setFocus()
 
-class SendPinDialog(QDialog):
-    pin_sent_success = Signal()
-
-    def __init__(self, client):
-        super(SendPinDialog, self).__init__()
+class PinDialog(QDialog):
+    def __init__(self):
+        super(PinDialog, self).__init__()
         self.ui = Ui_SendPinDialog()
         self.ui.setupUi(self)
-        self.setWindowTitle('Send Pin')
-        self.client = client
         self.ui.pin_lineedit.setFocus()
         self.ui.pin_lineedit.setValidator(QRegExpValidator(QRegExp("[1-9]+"), None))
         self.ui.pin_lineedit.setEchoMode(QLineEdit.Password)
@@ -66,14 +62,21 @@ class SendPinDialog(QDialog):
         self.ui.p8_button.clicked.connect(self.button_clicked(8))
         self.ui.p9_button.clicked.connect(self.button_clicked(9))
 
-        self.accepted.connect(self.sendpindialog_accepted)
-        do_command(commands.prompt_pin, self.client)
-
     def button_clicked(self, number):
         @Slot()
         def button_clicked_num():
             self.ui.pin_lineedit.setText(self.ui.pin_lineedit.text() + str(number))
         return button_clicked_num
+
+class SendPinDialog(PinDialog):
+    pin_sent_success = Signal()
+
+    def __init__(self, client):
+        super(SendPinDialog, self).__init__()
+        self.setWindowTitle('Send Pin')
+
+        self.accepted.connect(self.sendpindialog_accepted)
+        do_command(commands.prompt_pin, self.client)
 
     @Slot()
     def sendpindialog_accepted(self):
