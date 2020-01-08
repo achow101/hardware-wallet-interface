@@ -46,6 +46,8 @@ PIN_CURRENT = PinMatrixRequestType.Current
 PIN_NEW = PinMatrixRequestType.NewFirst
 PIN_CONFIRM = PinMatrixRequestType.NewSecond
 
+PLAIN_WORD_REQ = WordRequestType.Plain
+
 
 def echo(msg):
     print(msg, file=sys.stderr)
@@ -105,30 +107,30 @@ class PassphraseUI:
     def set_interactive(self, interactive):
         self.interactive = interactive
 
-def mnemonic_words(expand=False, language="english"):
-    if expand:
-        wordlist = Mnemonic(language).wordlist
-    else:
-        wordlist = set()
+    def mnemonic_words(expand=False, language="english"):
+        if expand:
+            wordlist = Mnemonic(language).wordlist
+        else:
+            wordlist = set()
 
-    def expand_word(word):
-        if not expand:
-            return word
-        if word in wordlist:
-            return word
-        matches = [w for w in wordlist if w.startswith(word)]
-        if len(matches) == 1:
-            return word
-        echo("Choose one of: " + ", ".join(matches))
-        raise KeyError(word)
+        def expand_word(word):
+            if not expand:
+                return word
+            if word in wordlist:
+                return word
+            matches = [w for w in wordlist if w.startswith(word)]
+            if len(matches) == 1:
+                return word
+            echo("Choose one of: " + ", ".join(matches))
+            raise KeyError(word)
 
-    def get_word(type):
-        assert type == WordRequestType.Plain
-        while True:
-            try:
-                word = prompt("Enter one word of mnemonic")
-                return expand_word(word)
-            except KeyError:
-                pass
+        def get_word(type):
+            assert type == WordRequestType.Plain
+            while True:
+                try:
+                    word = prompt("Enter one word of mnemonic")
+                    return expand_word(word)
+                except KeyError:
+                    pass
 
-    return get_word
+        return get_word
