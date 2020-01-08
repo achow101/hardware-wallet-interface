@@ -3,7 +3,7 @@
 import pprint
 
 from . import commands
-from .errors import handle_errors, DEVICE_NOT_INITIALIZED
+from .errors import BadArgumentError, handle_errors, DEVICE_NOT_INITIALIZED
 from .hwwclient import DeviceFeature
 
 from .devices.trezor import PassphraseUI
@@ -240,6 +240,32 @@ class GetKeypoolOptionsDialog(QDialog):
             self.ui.path_lineedit.setEnabled(True)
             self.ui.account_spinbox.setEnabled(False)
 
+class BitboxPassphraseQtUI:
+    def get_passphrase(self):
+        dialog = SetPassphraseDialog()
+        dialog.setWindowTitle('Enter Passphrase')
+        dialog.ui.passphrase_desc_label.setText('Enter a passphrase to protect the backup')
+        res = dialog.exec_()
+
+        if res != QDialog.Accepted:
+            raise BadArgumentError('Passphrase entry canceled')
+
+        password = dialog.ui.passphrase_lineedit.text()
+
+        dialog = SetPassphraseDialog()
+        dialog.setWindowTitle('Confirm Passphrase')
+        dialog.ui.passphrase_desc_label.setText('Confirm passphrase')
+        res = dialog.exec_()
+
+        if res != QDialog.Accepted:
+            raise BadArgumentError('Passphrase entry canceled')
+
+        conf_pass = dialog.ui.passphrase_lineedit.text()
+
+        if password != conf_pass:
+            raise BadArgumentError('Passphrases don\'t match')
+        return password
+
 class SetupDeviceDialog(QDialog):
     passphrase_changed = Signal(str)
 
@@ -424,6 +450,8 @@ class HWIQt(QMainWindow):
         # If this is a trezor, set the GuiUi
         if self.device_info['type'] == 'trezor':
             self.client.client.ui = TrezorQtUI(self.passphrase)
+        elif self.device_info['type'] == 'digitalbitbox':
+            self.client.passphrase_ui = BitboxPassphraseQtUI()
 
         self.get_device_info()
 
