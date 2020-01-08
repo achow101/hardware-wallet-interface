@@ -298,6 +298,12 @@ class BitboxPassphraseQtUI:
             raise BadArgumentError('Passphrases don\'t match')
         return password
 
+    def get_label(self):
+        label, ok = QInputDialog().getText(None, "Backup Device", "Label for Backup:")
+        if ok and label:
+            return label
+        raise BadArgumentError('Canceled')
+
 class SetupDeviceDialog(QDialog):
     passphrase_changed = Signal(str)
 
@@ -362,6 +368,7 @@ class DeviceManDialog(QDialog):
             self.ui.backup_button.setToolTip('')
         elif features['backup'] == DeviceFeature.NOT_SUPPORTED:
             self.ui.backup_button.setToolTip('HWI does not support backing up for this device yet.')
+        self.ui.backup_button.clicked.connect(self.handle_backup)
 
     @Slot()
     def handle_wipe(self):
@@ -389,6 +396,12 @@ class DeviceManDialog(QDialog):
             do_command(commands.restore_device, self.client, label)
             self.wipe_success.emit()
             self.accept()
+
+    @Slot()
+    def handle_backup(self):
+        do_command(commands.backup_device, self.client)
+        self.wipe_success.emit()
+        self.accept()
 
 class HWIQt(QMainWindow):
     def __init__(self):
