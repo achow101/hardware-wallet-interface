@@ -5,6 +5,7 @@ import struct
 import json
 import base64
 import pyaes
+import getpass
 import hashlib
 import hmac
 import os
@@ -293,6 +294,21 @@ def stretch_backup_key(password):
 def format_backup_filename(name):
     return '{}-{}.pdf'.format(name, time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime()))
 
+class BackupPassphraseUI:
+    def get_passphrase(self):
+        password = getpass.getpass(prompt='New Passphrase for Backup Encryption: ')
+        conf_pass = getpass.getpass(prompt='Confirm Passphrase: ')
+        if password != conf_pass:
+            raise BadArgumentError('Passphrases don\'t match')
+        return password
+
+    def get_label(self):
+        return input('Label for backup: ')
+
+class DebugPassphraseUI:
+    def get_passphrase(self):
+        return 'testpass'
+
 # This class extends the HardwareWalletClient for Digital Bitbox specific things
 class DigitalbitboxClient(HardwareWalletClient):
 
@@ -328,9 +344,11 @@ class DigitalbitboxClient(HardwareWalletClient):
             ip = split_path[1]
             port = int(split_path[2])
             self.device = BitboxSimulator(ip, port)
+            self.passphrase_ui = DebugPassphraseUI()
         else:
             self.device = hid.device()
             self.device.open_path(path.encode())
+            self.passphrase_ui = BackupPassphraseUI()
         self.password = password
 
     # Must return a dict with the xpub
@@ -539,21 +557,22 @@ class DigitalbitboxClient(HardwareWalletClient):
 
     # Setup a new device
     @digitalbitbox_exception
-    def setup_device(self, label='', passphrase=''):
+    def setup_device(self, label=''):
         # Make sure this is not initialized
         reply = send_encrypt('{"device" : "info"}', self.password, self.device)
         if 'error' not in reply or ('error' in reply and (reply['error']['code'] != 101 and reply['error']['code'] != '101')):
             raise DeviceAlreadyInitError('Device is already initialized. Use wipe first and try again')
 
         # Need a wallet name and backup passphrase
-        if not label or not passphrase:
-            raise BadArgumentError('The label and backup passphrase for a new Digital Bitbox wallet must be specified and cannot be empty')
+        if not label:
+            raise BadArgumentError('The label for a new Digital Bitbox wallet must be specified and cannot be empty')
 
         # Set password
         to_send = {'password': self.password}
         reply = send_plain(json.dumps(to_send).encode(), self.device)
 
         # Now make the wallet
+        passphrase = self.passphrase_ui.get_passphrase()
         key = stretch_backup_key(passphrase)
         backup_filename = format_backup_filename(label)
         to_send = {'seed': {'source': 'create', 'key': key, 'filename': backup_filename}}
@@ -576,11 +595,9 @@ class DigitalbitboxClient(HardwareWalletClient):
 
     # Begin backup process
     @digitalbitbox_exception
-    def backup_device(self, label='', passphrase=''):
-        # Need a wallet name and backup passphrase
-        if not label or not passphrase:
-            raise BadArgumentError('The label and backup passphrase for a Digital Bitbox backup must be specified and cannot be empty')
-
+    def backup_device(self):
+        label = self.passphrase_ui.get_label()
+        passphrase = self.passphrase_ui.get_passphrase()
         key = stretch_backup_key(passphrase)
         backup_filename = format_backup_filename(label)
         to_send = {'backup': {'source': 'all', 'key': key, 'filename': backup_filename}}

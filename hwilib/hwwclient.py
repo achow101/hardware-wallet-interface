@@ -91,7 +91,7 @@ class HardwareWalletClient(object):
                                   'implement this method')
 
     # Setup a new device
-    def setup_device(self, label='', passphrase=''):
+    def setup_device(self, label=''):
         raise NotImplementedError('The HardwareWalletClient base class does not '
                                   'implement this method')
 
@@ -105,7 +105,7 @@ class HardwareWalletClient(object):
         raise NotImplementedError('The HardwareWalletClient base class does not implement this method')
 
     # Begin backup process
-    def backup_device(self, label='', passphrase=''):
+    def backup_device(self):
         raise NotImplementedError('The HardwareWalletClient base class does not implement this method')
 
     # Close the device
