@@ -18,6 +18,7 @@ try:
     from .ui.ui_mainwindow import Ui_MainWindow
     from .ui.ui_sendpindialog import Ui_SendPinDialog
     from .ui.ui_setpassphrasedialog import Ui_SetPassphraseDialog
+    from .ui.ui_setupdevicedialog import Ui_SetupDeviceDialog
     from .ui.ui_signmessagedialog import Ui_SignMessageDialog
     from .ui.ui_signpsbtdialog import Ui_SignPSBTDialog
 except ImportError:
@@ -238,8 +239,35 @@ class GetKeypoolOptionsDialog(QDialog):
             self.ui.path_lineedit.setEnabled(True)
             self.ui.account_spinbox.setEnabled(False)
 
+class SetupDeviceDialog(QDialog):
+    passphrase_changed = Signal(str)
+
+    def __init__(self, client):
+        super(SetupDeviceDialog, self).__init__()
+        self.client = client
+        self.ui = Ui_SetupDeviceDialog()
+        self.ui.setupUi(self)
+        self.setWindowTitle('Setup A New Device')
+
+        self.accepted.connect(self.handle_accepted)
+        self.ui.device_passphrase_checkbox.stateChanged.connect(self.ui.dev_passphrase_lineedit.setEnabled)
+
+        self.ui.dev_passphrase_lineedit.setEchoMode(QLineEdit.Password)
+
+    @Slot()
+    def handle_accepted(self):
+        password = ''
+        if self.ui.device_passphrase_checkbox.isChecked():
+            password = self.ui.dev_passphrase_lineedit.text()
+        self.client.set_passphrase(password)
+        self.passphrase_changed.emit(password)
+
+        label = self.ui.device_label_lineedit.text()
+        do_command(commands.setup_device, self.client, label)
+
 class DeviceManDialog(QDialog):
     wipe_success = Signal()
+    passphrase_changed = Signal(str)
 
     def __init__(self, client):
         super(DeviceManDialog, self).__init__()
@@ -261,6 +289,7 @@ class DeviceManDialog(QDialog):
             self.ui.setup_button.setToolTip('')
         elif features['setup'] == DeviceFeature.NOT_SUPPORTED:
             self.ui.setup_button.setToolTip('HWI does not support stting up for this device yet.')
+        self.ui.setup_button.clicked.connect(self.handle_setup)
 
         if features['recover'] == DeviceFeature.SUPPORTED:
             self.ui.recover_button.setEnabled(True)
@@ -281,6 +310,17 @@ class DeviceManDialog(QDialog):
             do_command(commands.wipe_device, self.client)
             self.wipe_success.emit()
             self.accept()
+
+    @Slot()
+    def update_passphrase(self, passphrase):
+        self.passphrase_changed.emit(passphrase)
+
+    @Slot()
+    def handle_setup(self):
+        dialog = SetupDeviceDialog(self.client)
+        dialog.passphrase_changed.connect(self.update_passphrase)
+        dialog.exec_()
+        self.wipe_success.emit()
 
 class HWIQt(QMainWindow):
     def __init__(self):
@@ -327,6 +367,10 @@ class HWIQt(QMainWindow):
         self.ui.device_man_button.setEnabled(False)
         self.ui.keypool_textedit.clear()
         self.ui.desc_textedit.clear()
+
+    @Slot()
+    def update_passphrase(self, passphrase):
+        self.passphrase = passphrase
 
     @Slot()
     def refresh_clicked(self):
@@ -474,6 +518,7 @@ class HWIQt(QMainWindow):
     def show_devicemandialog(self):
         self.current_dialog = DeviceManDialog(self.client)
         self.current_dialog.wipe_success.connect(self.refresh_clicked)
+        self.current_dialog.passphrase_changed.connect(self.update_passphrase)
         self.current_dialog.exec_()
 
 def main():

@@ -125,3 +125,7 @@ class HardwareWalletClient(object):
     @classmethod
     def get_features(self):
         raise NotImplementedError('The HardwareWalletClient base class does not implement this method')
+
+    # Change the device passphrase
+    def set_passphrase(self, passphrase):
+        self.password = passphrase

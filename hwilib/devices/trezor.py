@@ -408,6 +408,10 @@ class TrezorClient(HardwareWalletClient):
     def get_features(self):
         raise UnavailableActionError('A specific Trezor model must be specified to get the features')
 
+    def set_passphrase(self, passphrase):
+        self.password = passphrase
+        self.client.ui.passphrase = passphrase
+
 class Trezor1Client(TrezorClient):
 
     # Setup features
