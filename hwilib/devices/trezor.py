@@ -6,7 +6,7 @@ from .trezorlib.client import TrezorClient as Trezor
 from .trezorlib.debuglink import TrezorClientDebugLink
 from .trezorlib.exceptions import Cancelled
 from .trezorlib.transport import enumerate_devices, get_transport, TREZOR_VENDOR_IDS
-from .trezorlib.ui import PassphraseUI, mnemonic_words, PIN_MATRIX_DESCRIPTION
+from .trezorlib.ui import PassphraseUI, PIN_MATRIX_DESCRIPTION
 from .trezorlib import tools, btc, device
 from .trezorlib import messages as proto
 from ..base58 import get_xpub_fingerprint, to_address, xpub_main_2_test, get_xpub_fingerprint_hex
@@ -360,7 +360,7 @@ class TrezorClient(HardwareWalletClient):
     def restore_device(self, label=''):
         self.client.init_device()
         self.client.ui.set_interactive(True)
-        device.recover(self.client, label=label, input_callback=mnemonic_words(), passphrase_protection=bool(self.password))
+        device.recover(self.client, label=label, input_callback=self.client.ui.mnemonic_words(), passphrase_protection=bool(self.password))
         return {'success': True}
 
     # Begin backup process

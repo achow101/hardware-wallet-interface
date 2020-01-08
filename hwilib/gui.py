@@ -8,7 +8,7 @@ from .hwwclient import DeviceFeature
 
 from .devices.trezor import PassphraseUI
 from .devices.trezorlib import exceptions
-from .devices.trezorlib.ui import PIN_CONFIRM, PIN_CURRENT, PIN_NEW
+from .devices.trezorlib.ui import PIN_CONFIRM, PIN_CURRENT, PIN_NEW, PLAIN_WORD_REQ
 
 try:
     from .ui.ui_devicemandialog import Ui_DeviceManDialog
@@ -25,8 +25,9 @@ except ImportError:
     print('Could not import UI files, did you run contrib/generate-ui.sh')
     exit(-1)
 
+from mnemonic import Mnemonic
 from PySide2.QtGui import QRegExpValidator
-from PySide2.QtWidgets import QApplication, QDialog, QDialogButtonBox, QLineEdit, QMessageBox, QMainWindow
+from PySide2.QtWidgets import QApplication, QDialog, QDialogButtonBox, QInputDialog, QLineEdit, QMessageBox, QMainWindow
 from PySide2.QtCore import QRegExp, Signal, Slot
 
 def do_command(f, *args, **kwargs):
@@ -119,6 +120,37 @@ class TrezorQtUI(PassphraseUI):
             return dialog.ui.pin_lineedit.text()
         else:
             raise exceptions.Cancelled()
+
+    def mnemonic_words(expand=False, language="english"):
+        if expand:
+            wordlist = Mnemonic(language).wordlist
+        else:
+            wordlist = set()
+
+        def expand_word(word):
+            if not expand:
+                return word
+            if word in wordlist:
+                return word
+            matches = [w for w in wordlist if w.startswith(word)]
+            if len(matches) == 1:
+                return word
+            QDialog.information("Choose one of: " + ", ".join(matches))
+            raise KeyError(word)
+
+        def get_word(type):
+            assert type == PLAIN_WORD_REQ
+            while True:
+                try:
+                    word, ok = QInputDialog().getText(None, "Enter Mnemonic Words", "Enter one word of mnemonic")
+                    if ok and word:
+                        return expand_word(word)
+                    else:
+                        raise exceptions.Cancelled()
+                except KeyError:
+                    pass
+
+        return get_word
 
 class GetXpubDialog(QDialog):
     def __init__(self, client):
@@ -323,6 +355,7 @@ class DeviceManDialog(QDialog):
             self.ui.recover_button.setToolTip('')
         elif features['recover'] == DeviceFeature.NOT_SUPPORTED:
             self.ui.recover_button.setToolTip('HWI does not support recovering for this device yet.')
+        self.ui.recover_button.clicked.connect(self.handle_recover)
 
         if features['backup'] == DeviceFeature.SUPPORTED:
             self.ui.backup_button.setEnabled(True)
@@ -348,6 +381,14 @@ class DeviceManDialog(QDialog):
         dialog.passphrase_changed.connect(self.update_passphrase)
         dialog.exec_()
         self.wipe_success.emit()
+
+    @Slot()
+    def handle_recover(self):
+        label, ok = QInputDialog().getText(self, "Recover Device", "Device Label:")
+        if ok and label:
+            do_command(commands.restore_device, self.client, label)
+            self.wipe_success.emit()
+            self.accept()
 
 class HWIQt(QMainWindow):
     def __init__(self):
