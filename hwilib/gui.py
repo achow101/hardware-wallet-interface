@@ -47,6 +47,7 @@ class SetPassphraseDialog(QDialog):
         self.setWindowTitle('Set Passphrase')
 
         self.ui.passphrase_lineedit.setFocus()
+        self.ui.passphrase_lineedit.setEchoMode(QLineEdit.Password)
 
 class PinDialog(QDialog):
     def __init__(self):
