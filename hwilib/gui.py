@@ -6,6 +6,10 @@ from . import commands
 from .errors import handle_errors, DEVICE_NOT_INITIALIZED
 from .hwwclient import DeviceFeature
 
+from .devices.trezor import PassphraseUI
+from .devices.trezorlib import exceptions
+from .devices.trezorlib.ui import PIN_CONFIRM, PIN_CURRENT, PIN_NEW
+
 try:
     from .ui.ui_devicemandialog import Ui_DeviceManDialog
     from .ui.ui_displayaddressdialog import Ui_DisplayAddressDialog
@@ -51,6 +55,7 @@ class PinDialog(QDialog):
         self.ui.pin_lineedit.setFocus()
         self.ui.pin_lineedit.setValidator(QRegExpValidator(QRegExp("[1-9]+"), None))
         self.ui.pin_lineedit.setEchoMode(QLineEdit.Password)
+        self.setWindowTitle('Enter Pin')
 
         self.ui.p1_button.clicked.connect(self.button_clicked(1))
         self.ui.p2_button.clicked.connect(self.button_clicked(2))
@@ -72,7 +77,7 @@ class SendPinDialog(PinDialog):
     pin_sent_success = Signal()
 
     def __init__(self, client):
-        super(SendPinDialog, self).__init__()
+        super(SendPinDialog, self).__init__(client)
         self.setWindowTitle('Send Pin')
 
         self.accepted.connect(self.sendpindialog_accepted)
@@ -87,6 +92,31 @@ class SendPinDialog(PinDialog):
         self.client.close()
         self.client = None
         self.pin_sent_success.emit()
+
+class TrezorQtUI(PassphraseUI):
+    def __init__(self, passphrase):
+        super(TrezorQtUI, self).__init__(passphrase)
+
+    def get_pin(self, code=None):
+        if not self.interactive:
+            raise NotImplementedError('get_pin is not needed')
+
+        if code == PIN_CURRENT:
+            desc = "Enter your current PIN"
+        elif code == PIN_NEW:
+            desc = "Enter a new PIN"
+        elif code == PIN_CONFIRM:
+            desc = "Enter the new PIN again"
+        else:
+            desc = "Enter your PIN"
+
+        dialog = PinDialog()
+        dialog.ui.pin_desc_label.setText(desc)
+        resp = dialog.exec_()
+        if resp == QDialog.Accepted:
+            return dialog.ui.pin_lineedit.text()
+        else:
+            raise exceptions.Cancelled()
 
 class GetXpubDialog(QDialog):
     def __init__(self, client):
@@ -345,6 +375,11 @@ class HWIQt(QMainWindow):
         # Get the client
         self.device_info = self.devices[index - 1]
         self.client = commands.get_client(self.device_info['model'], self.device_info['path'], self.passphrase)
+
+        # If this is a trezor, set the GuiUi
+        if self.device_info['type'] == 'trezor':
+            self.client.client.ui = TrezorQtUI(self.passphrase)
+
         self.get_device_info()
 
     def get_device_info(self):
