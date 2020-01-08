@@ -16,7 +16,7 @@ import sys
 import time
 
 from ..hwwclient import DeviceFeature, HardwareWalletClient, SupportedFeatures
-from ..errors import ActionCanceledError, BadArgumentError, DeviceFailureError, DeviceAlreadyInitError, DEVICE_NOT_INITIALIZED, DeviceNotReadyError, NoPasswordError, UnavailableActionError, common_err_msgs, handle_errors
+from ..errors import ActionCanceledError, BadArgumentError, DeviceFailureError, DeviceAlreadyInitError, DEVICE_NOT_INITIALIZED, DeviceNotReadyError, NoPasswordError, UnavailableActionError, common_err_msgs, handle_errors, UNKNOWN_ERROR
 from ..serializations import CTransaction, hash256, ser_sig_der, ser_sig_compact, ser_compact_size
 from ..base58 import get_xpub_fingerprint, xpub_main_2_test, get_xpub_fingerprint_hex
 
@@ -253,7 +253,7 @@ def send_plain(msg, device):
         r = to_string(r, 'utf8')
         reply = json.loads(r)
     except Exception as e:
-        reply = json.loads('{"error":"Exception caught while sending plaintext message to DigitalBitbox ' + str(e) + '"}')
+        reply = {'error': 'Exception caught while sending plaintext message to DigitalBitbox ' + str(e), 'code': UNKNOWN_ERROR}
     return reply
 
 def send_encrypt(msg, password, device):
@@ -284,7 +284,7 @@ def send_encrypt(msg, password, device):
         if 'error' in reply:
             password = None
     except Exception as e:
-        reply = {'error': 'Exception caught while sending encrypted message to DigitalBitbox ' + str(e)}
+        reply = {'error': 'Exception caught while sending encrypted message to DigitalBitbox ' + str(e), 'code': UNKNOWN_ERROR}
     return reply
 
 def stretch_backup_key(password):
@@ -578,7 +578,7 @@ class DigitalbitboxClient(HardwareWalletClient):
         to_send = {'seed': {'source': 'create', 'key': key, 'filename': backup_filename}}
         reply = send_encrypt(json.dumps(to_send).encode(), self.password, self.device)
         if 'error' in reply:
-            return {'success': False, 'error': reply['error']['message']}
+            raise DBBError(reply)
         return {'success': True}
 
     # Wipe this device
@@ -586,7 +586,7 @@ class DigitalbitboxClient(HardwareWalletClient):
     def wipe_device(self):
         reply = send_encrypt('{"reset" : "__ERASE__"}', self.password, self.device)
         if 'error' in reply:
-            return {'success': False, 'error': reply['error']['message']}
+            raise DBBError(reply)
         return {'success': True}
 
     # Restore device from mnemonic or xprv
