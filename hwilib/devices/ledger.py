@@ -344,7 +344,7 @@ class LedgerClient(HardwareWalletClient):
         return {'address': output['address'][12:-2]} # HACK: A bug in getWalletPublicKey results in the address being returned as the string "bytearray(b'<address>')". This extracts the actual address to work around this.
 
     # Setup a new device
-    def setup_device(self, label='', passphrase=''):
+    def setup_device(self, label=''):
         raise UnavailableActionError('The {} does not support software setup'.format(self.type))
 
     # Wipe this device
@@ -356,7 +356,7 @@ class LedgerClient(HardwareWalletClient):
         raise UnavailableActionError('The {} does not support restoring via software'.format(self.type))
 
     # Begin backup process
-    def backup_device(self, label='', passphrase=''):
+    def backup_device(self):
         raise UnavailableActionError('The {} does not support creating a backup via software'.format(self.type))
 
     # Close the device

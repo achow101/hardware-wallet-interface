@@ -21,7 +21,7 @@ import json
 import sys
 
 def backup_device_handler(args, client):
-    return backup_device(client, label=args.label, backup_passphrase=args.backup_passphrase)
+    return backup_device(client)
 
 def displayaddress_handler(args, client):
     return displayaddress(client, desc=args.desc, path=args.path, sh_wpkh=args.sh_wpkh, wpkh=args.wpkh)
@@ -48,7 +48,7 @@ def restore_device_handler(args, client):
 
 def setup_device_handler(args, client):
     if args.interactive:
-        return setup_device(client, label=args.label, backup_passphrase=args.backup_passphrase)
+        return setup_device(client, label=args.label)
     return {'error': 'setup requires interactive mode', 'code': UNAVAILABLE_ACTION}
 
 def signmessage_handler(args, client):
@@ -163,7 +163,6 @@ def process_commands(cli_args):
 
     setupdev_parser = subparsers.add_parser('setup', help='Setup a device. Passphrase protection uses the password given by -p. Requires interactive mode')
     setupdev_parser.add_argument('--label', '-l', help='The name to give to the device', default='')
-    setupdev_parser.add_argument('--backup_passphrase', '-b', help='The passphrase to use for the backup, if applicable', default='')
     setupdev_parser.set_defaults(func=setup_device_handler)
 
     wipedev_parser = subparsers.add_parser('wipe', help='Wipe a device')
@@ -174,8 +173,6 @@ def process_commands(cli_args):
     restore_parser.set_defaults(func=restore_device_handler)
 
     backup_parser = subparsers.add_parser('backup', help='Initiate the device backup creation process')
-    backup_parser.add_argument('--label', '-l', help='The name to give to the device', default='')
-    backup_parser.add_argument('--backup_passphrase', '-b', help='The passphrase to use for the backup, if applicable', default='')
     backup_parser.set_defaults(func=backup_device_handler)
 
     promptpin_parser = subparsers.add_parser('promptpin', help='Have the device prompt for your PIN')

@@ -232,8 +232,8 @@ def displayaddress(client, path=None, desc=None, sh_wpkh=False, wpkh=False):
             return {'error': 'Key in descriptor does not match device: ' + desc, 'code': BAD_ARGUMENT}
         return client.display_address(descriptor.m_path, descriptor.sh_wpkh, descriptor.wpkh)
 
-def setup_device(client, label='', backup_passphrase=''):
-    return client.setup_device(label, backup_passphrase)
+def setup_device(client, label=''):
+    return client.setup_device(label)
 
 def wipe_device(client):
     return client.wipe_device()
@@ -241,8 +241,8 @@ def wipe_device(client):
 def restore_device(client, label):
     return client.restore_device(label)
 
-def backup_device(client, label='', backup_passphrase=''):
-    return client.backup_device(label, backup_passphrase)
+def backup_device(client):
+    return client.backup_device()
 
 def prompt_pin(client):
     return client.prompt_pin()

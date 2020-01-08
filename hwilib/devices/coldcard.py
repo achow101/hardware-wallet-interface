@@ -207,7 +207,7 @@ class ColdcardClient(HardwareWalletClient):
         return {'address': address}
 
     # Setup a new device
-    def setup_device(self, label='', passphrase=''):
+    def setup_device(self, label=''):
         raise UnavailableActionError('The Coldcard does not support software setup')
 
     # Wipe this device
@@ -220,7 +220,7 @@ class ColdcardClient(HardwareWalletClient):
 
     # Begin backup process
     @coldcard_exception
-    def backup_device(self, label='', passphrase=''):
+    def backup_device(self):
         self.device.check_mitm()
 
         ok = self.device.send_recv(CCProtocolPacker.start_backup())
