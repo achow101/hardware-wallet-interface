@@ -288,6 +288,7 @@ class TestSignTx(DeviceTestCase):
         if not unknown_inputs:
             # Just do the normal signing process to test "all inputs" case
             sign_res = self.do_command(self.dev_args + ['signtx', psbt['psbt']])
+            assert 'psbt' in sign_res, str(sign_res)
             finalize_res = self.wrpc.finalizepsbt(sign_res['psbt'])
         else:
             # Sign only input one on first pass
