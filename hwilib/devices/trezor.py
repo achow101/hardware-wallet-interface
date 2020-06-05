@@ -45,6 +45,9 @@ from ..base58 import (
 from ..serializations import (
     CTxOut,
     ExtendedKey,
+    is_p2sh,
+    is_p2wsh,
+    is_witness,
     ser_uint256,
 )
 from .. import bech32
@@ -200,26 +203,44 @@ class TrezorClient(HardwareWalletClient):
 
                 # Detrermine spend type
                 scriptcode = b''
+                utxo = None
                 if psbt_in.witness_utxo:
                     utxo = psbt_in.witness_utxo
-                    # Check if the output is p2sh
-                    if psbt_in.witness_utxo.is_p2sh():
+                if psbt_in.non_witness_utxo:
+                    if txin.prevout.hash != psbt_in.non_witness_utxo.sha256:
+                        raise BadArgumentError('Input {} has a non_witness_utxo with the wrong hash'.format(input_num))
+                    utxo = psbt_in.non_witness_utxo.vout[txin.prevout.n]
+                if utxo is None:
+                    continue
+                scriptcode = utxo.scriptPubKey
+
+                # Check if P2SH
+                p2sh = False
+                if is_p2sh(scriptcode):
+                    # Look up redeemscript
+                    if len(psbt_in.redeem_script) == 0:
+                        continue
+                    scriptcode = psbt_in.redeem_script
+                    p2sh = True
+
+                # Check segwit
+                is_wit, _, _ = is_witness(scriptcode)
+
+                if is_wit:
+                    if p2sh:
                         txinputtype.script_type = proto.InputScriptType.SPENDP2SHWITNESS
                     else:
                         txinputtype.script_type = proto.InputScriptType.SPENDWITNESS
-                    scriptcode = psbt_in.witness_utxo.scriptPubKey
-                    txinputtype.amount = psbt_in.witness_utxo.nValue
-                elif psbt_in.non_witness_utxo:
-                    utxo = psbt_in.non_witness_utxo.vout[txin.prevout.n]
+                else:
                     txinputtype.script_type = proto.InputScriptType.SPENDADDRESS
-                    scriptcode = utxo.scriptPubKey
-                    txinputtype.amount = psbt_in.non_witness_utxo.vout[txin.prevout.n].nValue
+                txinputtype.amount = utxo.nValue
 
-                # Set the script
-                if psbt_in.witness_script:
+                # Check if P2WSH
+                if is_p2wsh(scriptcode):
+                    # Look up witnessscript
+                    if len(psbt_in.witness_script) == 0:
+                        continue
                     scriptcode = psbt_in.witness_script
-                elif psbt_in.redeem_script:
-                    scriptcode = psbt_in.redeem_script
 
                 def ignore_input():
                     txinputtype.address_n = [0x80000000 | 84, 0x80000000 | (1 if self.is_testnet else 0)]
