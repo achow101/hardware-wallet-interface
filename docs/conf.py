@@ -32,6 +32,7 @@ release = '1.1.2'
 # ones.
 extensions = [
     "sphinx.ext.autodoc",
+    "sphinxcontrib.autoprogram",
 ]
 
 # Add any paths that contain templates here, relative to this directory.

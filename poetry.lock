@@ -416,6 +416,18 @@ test = ["pytest"]
 
 [[package]]
 category = "dev"
+description = "Documenting CLI programs"
+name = "sphinxcontrib-autoprogram"
+optional = false
+python-versions = "*"
+version = "0.1.5"
+
+[package.dependencies]
+Sphinx = ">=1.2"
+six = "*"
+
+[[package]]
+category = "dev"
 description = "sphinxcontrib-devhelp is a sphinx extension which outputs Devhelp document."
 name = "sphinxcontrib-devhelp"
 optional = false
@@ -511,7 +523,7 @@ testing = ["jaraco.itertools", "func-timeout"]
 qt = ["pyside2"]
 
 [metadata]
-content-hash = "99b14766efd703dfb60f7acd1b6971bbf398821681c11a4d4f604fe1cf41987b"
+content-hash = "c5c48fd23a4327d36d92c93fcfd6ecbd33642e0d688c910f7984f1aeffd81cf3"
 python-versions = "^3.6,<3.9"
 
 [metadata.files]
@@ -715,6 +727,10 @@ sphinx = [
 sphinxcontrib-applehelp = [
     {file = "sphinxcontrib-applehelp-1.0.2.tar.gz", hash = "sha256:a072735ec80e7675e3f432fcae8610ecf509c5f1869d17e2eecff44389cdbc58"},
     {file = "sphinxcontrib_applehelp-1.0.2-py2.py3-none-any.whl", hash = "sha256:806111e5e962be97c29ec4c1e7fe277bfd19e9652fb1a4392105b43e01af885a"},
+]
+sphinxcontrib-autoprogram = [
+    {file = "sphinxcontrib-autoprogram-0.1.5.tar.gz", hash = "sha256:7ec6bdf235b491dc693d1a72fb7f9f734db69e29b81333435efb41f09f9bbeef"},
+    {file = "sphinxcontrib_autoprogram-0.1.5-py2.py3-none-any.whl", hash = "sha256:5c1af55d44c0a4301807eb42174a0f474d97decc137169c7c9305e56ed4d3000"},
 ]
 sphinxcontrib-devhelp = [
     {file = "sphinxcontrib-devhelp-1.0.2.tar.gz", hash = "sha256:ff7f1afa7b9642e7060379360a67e9c41e8f3121f2ce9164266f61b9f4b338e4"},

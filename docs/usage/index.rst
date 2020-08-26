@@ -5,3 +5,4 @@ Usage
    :maxdepth: 2
 
    installation
+   cli-usage

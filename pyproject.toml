@@ -36,6 +36,7 @@ macholib = {version = "^1.11",platform = "darwin"}
 autopep8 = "^1.4"
 flake8 = "^3.7"
 sphinx = "^3.2.1"
+sphinxcontrib-autoprogram = "^0.1.5"
 
 [tool.poetry.scripts]
 hwi = 'hwilib.cli:main'

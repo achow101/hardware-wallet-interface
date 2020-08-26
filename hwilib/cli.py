@@ -115,7 +115,7 @@ class HWIArgumentParser(argparse.ArgumentParser):
         print(json.dumps(error))
         self.exit(2)
 
-def process_commands(cli_args):
+def get_parser():
     parser = HWIArgumentParser(description='Hardware Wallet Interface, version {}.\nAccess and send commands to a hardware wallet device. Responses are in JSON format.'.format(__version__))
     parser.add_argument('--device-path', '-d', help='Specify the device path of the device to connect to')
     parser.add_argument('--device-type', '-t', help='Specify the type of device that will be connected. If `--device-path` not given, the first device of this type enumerated is used.')
@@ -158,11 +158,11 @@ def process_commands(cli_args):
     kparg_group.add_argument('--nokeypool', action='store_false', dest='keypool', help='Indicates that the keys are not to be imported to the keypool', default=False)
     getkeypool_parser.add_argument('--internal', action='store_true', help='Indicates that the keys are change keys')
     kp_type_group = getkeypool_parser.add_mutually_exclusive_group()
-    kp_type_group.add_argument('--sh_wpkh', action='store_true', help='Generate p2sh-nested segwit addresses (default path: m/49h/0h/0h/[0,1]/*)')
-    kp_type_group.add_argument('--wpkh', action='store_true', help='Generate bech32 addresses (default path: m/84h/0h/0h/[0,1]/*)')
-    kp_type_group.add_argument('--all', action='store_true', help='Generate addresses for all standard address types (default paths: m/{44,49,84}h/0h/0h/[0,1]/*)')
+    kp_type_group.add_argument('--sh_wpkh', action='store_true', help='Generate p2sh-nested segwit addresses (default path: m/49h/0h/0h/[0,1]/i)')
+    kp_type_group.add_argument('--wpkh', action='store_true', help='Generate bech32 addresses (default path: m/84h/0h/0h/[0,1]/i)')
+    kp_type_group.add_argument('--all', action='store_true', help='Generate addresses for all standard address types (default paths: m/{44,49,84}h/0h/0h/[0,1]/i)')
     getkeypool_parser.add_argument('--account', help='BIP43 account', type=int, default=0)
-    getkeypool_parser.add_argument('--path', help='Derivation path, default follows BIP43 convention, e.g. m/84h/0h/0h/1/* with --wpkh --internal. If this argument and --internal is not given, both internal and external keypools will be returned.')
+    getkeypool_parser.add_argument('--path', help='Derivation path, default follows BIP43 convention, e.g. m/84h/0h/0h/1/i with --wpkh --internal. If this argument and --internal is not given, both internal and external keypools will be returned.')
     getkeypool_parser.add_argument('start', type=int, help='The index to start at.')
     getkeypool_parser.add_argument('end', type=int, help='The index to end at.')
     getkeypool_parser.set_defaults(func=getkeypool_handler)
@@ -174,7 +174,7 @@ def process_commands(cli_args):
     displayaddr_parser = subparsers.add_parser('displayaddress', help='Display an address')
     group = displayaddr_parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--desc', help='Output Descriptor. E.g. wpkh([00000000/84h/0h/0h]xpub.../0/0), where 00000000 must match --fingerprint and xpub can be obtained with getxpub. See doc/descriptors.md in Bitcoin Core')
-    group.add_argument('--path', help='The BIP 32 derivation path of the key embedded in the address, default follows BIP43 convention, e.g. m/84h/0h/0h/1/*')
+    group.add_argument('--path', help='The BIP 32 derivation path of the key embedded in the address, default follows BIP43 convention, e.g. m/84h/0h/0h/1/i')
     displayaddr_parser.add_argument('--sh_wpkh', action='store_true', help='Display the p2sh-nested segwit address associated with this key path')
     displayaddr_parser.add_argument('--wpkh', action='store_true', help='Display the bech32 version of the address associated with this key path')
     displayaddr_parser.add_argument('--redeem_script', help='P2SH redeem script')
@@ -212,6 +212,11 @@ def process_commands(cli_args):
         udevrules_parser = subparsers.add_parser('installudevrules', help='Install and load the udev rule files for the hardware wallet devices')
         udevrules_parser.add_argument('--location', help='The path where the udev rules files will be copied', default='/etc/udev/rules.d/')
         udevrules_parser.set_defaults(func=install_udev_rules_handler)
+
+    return parser
+
+def process_commands(cli_args):
+    parser = get_parser()
 
     if any(arg == '--stdin' for arg in cli_args):
         while True:
