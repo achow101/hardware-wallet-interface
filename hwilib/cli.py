@@ -129,7 +129,7 @@ class HWIArgumentParser(argparse.ArgumentParser):
         print(json.dumps(error))
         self.exit(2)
 
-def process_commands(cli_args: List[str]) -> Any:
+def get_parser():
     parser = HWIArgumentParser(description='Hardware Wallet Interface, version {}.\nAccess and send commands to a hardware wallet device. Responses are in JSON format.'.format(__version__))
     parser.add_argument('--device-path', '-d', help='Specify the device path of the device to connect to')
     parser.add_argument('--device-type', '-t', help='Specify the type of device that will be connected. If `--device-path` not given, the first device of this type enumerated is used.')
@@ -223,6 +223,11 @@ def process_commands(cli_args: List[str]) -> Any:
         udevrules_parser = subparsers.add_parser('installudevrules', help='Install and load the udev rule files for the hardware wallet devices')
         udevrules_parser.add_argument('--location', help='The path where the udev rules files will be copied', default='/etc/udev/rules.d/')
         udevrules_parser.set_defaults(func=install_udev_rules_handler)
+
+    return parser
+
+def process_commands(cli_args: List[str]) -> Any:
+    parser = get_parser()
 
     if any(arg == '--stdin' for arg in cli_args):
         while True:
