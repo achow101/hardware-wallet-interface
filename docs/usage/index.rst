@@ -6,3 +6,4 @@ Usage
 
    installation
    cli-usage
+   api-usage
