@@ -58,3 +58,9 @@ html_theme = 'alabaster'
 
 # Autodoc config to include type hints in the description
 autodoc_typehints = "description"
+
+# Order the autodoc members by type
+autodoc_member_order = "bysource"
+
+# Show both class and init docstring
+autoclass_content = "both"
