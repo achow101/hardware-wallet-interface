@@ -21,3 +21,5 @@ The library API for use by projects importing ``hwilib`` can be found here.
    :members:
 .. automodule:: hwilib.bech32
    :members:
+.. automodule:: hwilib.errors
+   :members:
