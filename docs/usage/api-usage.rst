@@ -9,3 +9,5 @@ The library API for use by projects importing ``hwilib`` can be found here.
    :members:
 .. automodule:: hwilib.errors
    :members:
+.. automodule:: hwilib.descriptor
+   :members:
