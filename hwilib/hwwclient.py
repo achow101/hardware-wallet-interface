@@ -1,3 +1,10 @@
+"""
+Hardware Wallet Client Interface
+********************************
+
+The :class:`HardwareWalletClient` is the class which all of the specific device implementations subclass.
+"""
+
 from typing import Dict, Optional, Union
 
 from .base58 import get_xpub_fingerprint_hex
@@ -6,7 +13,8 @@ from .serializations import PSBT
 
 
 class HardwareWalletClient(object):
-    """Create a client for a HID device that has already been opened.
+    """
+    Create a client for a device that has already been opened.
 
     This abstract class defines the methods
     that hardware wallet subclasses should implement.
@@ -23,35 +31,53 @@ class HardwareWalletClient(object):
         self.expert = expert
 
     def get_master_xpub(self) -> Dict[str, str]:
-        """Return the master BIP44 public key.
+        """
+        Return the master BIP44 public key.
 
-        Retrieve the public key at the "m/44h/0h/0h" derivation path.
+        Subclasses generally should not override this.
 
-        Return {"xpub": <xpub string>}.
+        :return: A dictionary containing the public key at the ``m/44'/0'/0'`` derivation path.
+            Returned as ``{"xpub": <xpub string>}``.
         """
         # FIXME testnet is not handled yet
         return self.get_pubkey_at_path("m/44h/0h/0h")
 
     def get_master_fingerprint_hex(self) -> str:
-        """Return the master public key fingerprint as hex-string.
+        """
+        Return the master public key fingerprint as hex-string.
+        This is done by retrieving the extended pubkey at ``m/0'`` and the fingerprint extracting the fingerprint.
 
-        Retrieve the master public key at the "m/0h" derivation path.
+        Subclasses should only override this if the fingerprint can be more easily retrieved in a different way.
+
+        :return: The master key fingerprint
         """
         master_xpub = self.get_pubkey_at_path("m/0h")["xpub"]
         return get_xpub_fingerprint_hex(master_xpub)
 
     def get_pubkey_at_path(self, bip32_path: str) -> Dict[str, str]:
-        """Return the public key at the BIP32 derivation path.
+        """
+        Return the extended public key at the BIP32 derivation path.
 
-        Return {"xpub": <xpub string>}.
+        Subclasses must implement this.
+
+        :param bip32_path: The derivation path to retrieve the key for.
+        :return: A dictionary containing the public key at the ``bip32_path``.
+            Returned as ``{"xpub": <xpub string>}``.
+        :raises: NotImplementedError: when the subclass has not implemented this.
         """
         raise NotImplementedError("The HardwareWalletClient base class "
                                   "does not implement this method")
 
     def sign_tx(self, psbt: PSBT) -> Dict[str, str]:
-        """Sign a partially signed bitcoin transaction (PSBT).
+        """
+        Sign a partially signed bitcoin transaction (PSBT).
 
-        Return {"psbt": <base64 psbt string>}.
+        Subclasses must implement this.
+
+        :param psbt: The PSBT to sign
+        :return: A dictionary containing the processed PSBT serialized in Base64.
+            Returned as ``{"psbt": <base64 psbt string>}``.
+        :raises: NotImplementedError: when the subclass has not implemented this.
         """
         raise NotImplementedError("The HardwareWalletClient base class "
                                   "does not implement this method")
@@ -59,15 +85,17 @@ class HardwareWalletClient(object):
     def sign_message(
         self, message: Union[str, bytes], bip32_path: str
     ) -> Dict[str, str]:
-        """Sign a message (bitcoin message signing).
+        """
+        Sign a message (bitcoin message signing).
 
-        Sign the message according to the bitcoin message signing standard:
-        usually, the message is a string that is encoded to bytes;
-        anyway, if the message is already bytes it is processed untouched.
+        Subclasses must implement this.
 
-        Retrieve the signing key at the specified BIP32 derivation path.
-
-        Return {"signature": <base64 signature string>}.
+        :param message: The message to be signed. If a string, it is encoded to bytes.
+            If it is already bytes, no additional conversions or encoding is done, other than the signed message processing.
+        :param bip32_path: The derivation path to the key to sign with.
+        :return: A dictionary containing the signature.
+            Returned as ``{"signature": <base64 signature string>}``.
+        :raises: NotImplementedError: when the subclass has not implemented this.
         """
         raise NotImplementedError("The HardwareWalletClient base class "
                                   "does not implement this method")
@@ -80,25 +108,37 @@ class HardwareWalletClient(object):
         redeem_script: Optional[str] = None,
         descriptor: Optional[Descriptor] = None,
     ) -> Dict[str, str]:
-        """Display and return the address of specified type.
+        """
+        Display and return the address of specified type.
 
-        redeem_script is a hex-string.
+        Some devices support multisig address display.
+        Those devices will need the ``redeem_script`` to display such addresses.
+        Some devices also support displaying multisig addresses where the keys are derived from extended pubkeys.
+        To display such addresses, a descriptor containing extended pubkeys must be provided.
 
-        Retrieve the public key at the specified BIP32 derivation path.
+        Subclasses must implement this.
 
-        Return {"address": <base58 or bech32 address string>}.
+        :param bip32_path: The derivation path to the public key for the address to show
+        :param p2sh_p2wpkh: Whether to show a Nested Segwit address
+        :param bech32: Whether to show a bech32 address
+        :param redeem_script: A hex string that specifies a multisig redeemScript to display multisig addresses
+        :param descriptor: A output script descriptor containing key origins from which ``bip32_path``, ``p2sh_p2wpkh``, ``bech32``, and ``redeem_script`` can be inferred
+        :return: A dictionary containing the address displayed.
+            Returend as ``{"address": <base58 or bech32 address string>}``.
+        :raises: NotImplementedError: when the subclass has not implemented this.
         """
         raise NotImplementedError("The HardwareWalletClient base class "
                                   "does not implement this method")
 
     def wipe_device(self) -> Dict[str, Union[bool, str, int]]:
-        """Wipe the HID device.
+        """
+        Wipe the device.
 
-        Must return a dictionary with the "success" key,
-        possibly including also "error" and "code", e.g.:
-        {"success": bool, "error": srt, "code": int}.
+        Subclasses must implement this.
+        If device wiping is not supported, :class:`~hwilib.errors.NotImplementedError` must be raised.
 
-        Raise UnavailableActionError if appropriate for the device.
+        :return: A dictionary with the "success" key.
+        :raises: NotImplementedError: when the subclass has not implemented this.
         """
         raise NotImplementedError("The HardwareWalletClient base class "
                                   "does not implement this method")
@@ -106,13 +146,16 @@ class HardwareWalletClient(object):
     def setup_device(
         self, label: str = "", passphrase: str = ""
     ) -> Dict[str, Union[bool, str, int]]:
-        """Setup the HID device.
+        """
+        Setup the device.
 
-        Must return a dictionary with the "success" key,
-        possibly including also "error" and "code", e.g.:
-        {"success": bool, "error": str, "code": int}.
+        Subclasses must implement this.
+        If device setup is not supported, :class:`~hwilib.errors.NotImplementedError` must be raised.
 
-        Raise UnavailableActionError if appropriate for the device.
+        :param label: The label to give to the device
+        :param passphrase: The passphrase to use on the device
+        :return: A dictionary with the "success" key.
+        :raises: NotImplementedError: when the subclass has not implemented this.
         """
         raise NotImplementedError("The HardwareWalletClient base class "
                                   "does not implement this method")
@@ -120,13 +163,16 @@ class HardwareWalletClient(object):
     def restore_device(
         self, label: str = "", word_count: int = 24
     ) -> Dict[str, Union[bool, str, int]]:
-        """Restore the HID device from mnemonic.
+        """
+        Restore the device from mnemonic.
 
-        Must return a dictionary with the "success" key,
-        possibly including also "error" and "code", e.g.:
-        {"success": bool, "error": srt, "code": int}.
+        Subclasses must implement this.
+        If device restore is not supported, :class:`~hwilib.errors.NotImplementedError` must be raised.
 
-        Raise UnavailableActionError if appropriate for the device.
+        :param label: The label to give to the device
+        :param word_count: The number of words in the mnemonic
+        :return: A dictionary with the "success" key.
+        :raises: NotImplementedError: when the subclass has not implemented this.
         """
         raise NotImplementedError("The HardwareWalletClient base class "
                                   "does not implement this method")
@@ -134,54 +180,65 @@ class HardwareWalletClient(object):
     def backup_device(
         self, label: str = "", passphrase: str = ""
     ) -> Dict[str, Union[bool, str, int]]:
-        """Backup the HID device.
+        """
+        Backup the device.
 
-        Must return a dictionary with the "success" key,
-        possibly including also "error" and "code", e.g.:
-        {"success": bool, "error": srt, "code": int}.
+        Subclasses must implement this.
+        If device backup is not supported, :class:`~hwilib.errors.NotImplementedError` must be raised.
 
-        Raise UnavailableActionError if appropriate for the device.
+        :param label: The label to give to the backup
+        :param passphrase: The passphrase to use for the backup
+        :return: A dictionary with the "success" key.
+        :raises: NotImplementedError: when the subclass has not implemented this.
         """
         raise NotImplementedError("The HardwareWalletClient base class "
                                   "does not implement this method")
 
     def close(self) -> None:
-        "Close the HID device."
+        """
+        Safely close and disconnect from the device.
+
+        Subclasses must implement this.
+        """
         raise NotImplementedError("The HardwareWalletClient base class "
                                   "does not implement this method")
 
     def prompt_pin(self) -> Dict[str, Union[bool, str, int]]:
-        """Prompt for PIN.
+        """
+        Prompt for PIN.
 
-        Must return a dictionary with the "success" key,
-        possibly including also "error" and "code", e.g.:
-        {"success": bool, "error": srt, "code": int}.
+        Subclasses must implement this.
+        If PIN prompting is not supported, :class:`~hwilib.errors.NotImplementedError` must be raised.
 
-        Raise UnavailableActionError if appropriate for the device.
+        :return: A dictionary with the "success" key.
+        :raises: NotImplementedError: when the subclass has not implemented this.
         """
         raise NotImplementedError("The HardwareWalletClient base class "
                                   "does not implement this method")
 
     def send_pin(self, pin: str) -> Dict[str, Union[bool, str, int]]:
-        """Send PIN.
+        """
+        Send PIN.
 
-        Must return a dictionary with the "success" key,
-        possibly including also "error" and "code", e.g.:
-        {"success": bool, "error": srt, "code": int}.
+        Subclasses must implement this.
+        If PIN sending is not supported, :class:`~hwilib.errors.NotImplementedError` must be raised.
 
-        Raise UnavailableActionError if appropriate for the device.
+        :param pin: The pin to send to the device
+        :return: A dictionary with the "success" key.
+        :raises: NotImplementedError: when the subclass has not implemented this.
         """
         raise NotImplementedError("The HardwareWalletClient base class "
                                   "does not implement this method")
 
     def toggle_passphrase(self) -> Dict[str, Union[bool, str, int]]:
-        """Toggle passphrase.
+        """
+        Toggle passphrase.
 
-        Must return a dictionary with the "success" key,
-        possibly including also "error" and "code", e.g.:
-        {"success": bool, "error": srt, "code": int}.
+        Subclasses must implement this.
+        If passphrase toggling is not supported, :class:`~hwilib.errors.NotImplementedError` must be raised.
 
-        Raise UnavailableActionError if appropriate for the device.
+        :return: A dictionary with the "success" key.
+        :raises: NotImplementedError: when the subclass has not implemented this.
         """
         raise NotImplementedError("The HardwareWalletClient base class "
                                   "does not implement this method")
