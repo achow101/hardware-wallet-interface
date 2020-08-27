@@ -16,9 +16,9 @@ from .key import (
     parse_path,
 )
 from .errors import (
+    BadArgumentError,
+    NotImplementedError,
     UnknownDeviceError,
-    BAD_ARGUMENT,
-    NOT_IMPLEMENTED,
 )
 from .descriptor import (
     Descriptor,
@@ -167,9 +167,9 @@ def getdescriptor(client, master_fpr, testnet=False, path=None, internal=False, 
             parsed_path.append(0)
     else:
         if path[0] != "m":
-            return {'error': 'Path must start with m/', 'code': BAD_ARGUMENT}
+            raise BadArgumentError("Path must start with m/")
         if path[-1] != "*":
-            return {'error': 'Path must end with /*', 'code': BAD_ARGUMENT}
+            raise BadArgumentError("Path must end with /*")
         parsed_path = parse_path(path[:-2])
 
     # Find the last hardened derivation:
@@ -256,13 +256,13 @@ def getdescriptors(client, account=0):
 def displayaddress(client, path=None, desc=None, sh_wpkh=False, wpkh=False, redeem_script=None):
     if path is not None:
         if sh_wpkh and wpkh:
-            return {'error': 'Both `--wpkh` and `--sh_wpkh` can not be selected at the same time.', 'code': BAD_ARGUMENT}
+            raise BadArgumentError("Both `--wpkh` and `--sh_wpkh` can not be selected at the same time.")
         return client.display_address(path, sh_wpkh, wpkh, redeem_script=redeem_script)
     elif desc is not None:
         if sh_wpkh or wpkh:
-            return {'error': ' `--wpkh` and `--sh_wpkh` can not be combined with --desc', 'code': BAD_ARGUMENT}
+            raise BadArgumentError("`--wpkh` and `--sh_wpkh` can not be combined with --desc")
         if redeem_script:
-            return {'error': ' `--redeem_script` can not be combined with --desc', 'code': BAD_ARGUMENT}
+            raise BadArgumentError("`--redeem_script` can not be combined with --desc")
         descriptor = parse_descriptor(desc)
         is_sh = isinstance(descriptor, SHDescriptor)
         is_wsh = isinstance(descriptor, WSHDescriptor)
@@ -291,12 +291,12 @@ def displayaddress(client, path=None, desc=None, sh_wpkh=False, wpkh=False, rede
         if isinstance(descriptor, PKHDescriptor) or is_wpkh:
             pubkey = descriptor.pubkeys[0]
             if pubkey.origin is None:
-                return {'error': 'Descriptor missing origin info: ' + desc, 'code': BAD_ARGUMENT}
+                raise BadArgumentError("Descriptor missing origin info: " + desc)
             if pubkey.origin.get_fingerprint_hex() != client.get_master_fingerprint_hex():
-                return {'error': 'Descriptor fingerprint does not match device: ' + desc, 'code': BAD_ARGUMENT}
+                raise BadArgumentError("Descriptor fingerprint does not match device: " + desc)
             xpub = client.get_pubkey_at_path(pubkey.origin.get_derivation_path())['xpub']
             if pubkey.pubkey != xpub and pubkey.pubkey != xpub_to_pub_hex(xpub):
-                return {'error': 'Key in descriptor does not match device: ' + desc, 'code': BAD_ARGUMENT}
+                raise BadArgumentError("Key in descriptor does not match device: " + desc)
             return client.display_address(pubkey.origin.get_derivation_path(), is_sh and is_wpkh, not is_sh and is_wpkh)
 
 def setup_device(client, label='', backup_passphrase=''):
@@ -324,4 +324,4 @@ def install_udev_rules(source, location):
     if platform.system() == "Linux":
         from .udevinstaller import UDevInstaller
         return UDevInstaller.install(source, location)
-    return {'error': 'udev rules are not needed on your platform', 'code': NOT_IMPLEMENTED}
+    raise NotImplementedError("udev rules are not needed on your platform")
