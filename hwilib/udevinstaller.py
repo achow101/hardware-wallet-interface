@@ -9,8 +9,19 @@ from typing import (
 )
 
 class UDevInstaller(object):
+    """
+    Installs the udev rules
+    """
     @staticmethod
     def install(source: str, location: str) -> Dict[str, Union[int, str]]:
+        """
+        Install the udev rules from source into location.
+        This will also reload and trigger udevadm so that devices matching the new rules will be detected.
+        The user will be added to the ``plugdev`` group. If the group doesn't exist, the user will be added to it.
+
+        :param source: The path to the source directory containing the rules
+        :param location: The path to the directory to copy the rules to
+        """
         try:
             udev_installer = UDevInstaller()
             udev_installer.copy_udev_rule_files(source, location)
@@ -33,12 +44,21 @@ class UDevInstaller(object):
         check_call(commands, stderr=DEVNULL, stdout=DEVNULL)
 
     def trigger(self) -> None:
+        """
+        Run ``udevadm trigger``
+        """
         self._execute(self._udevadm, 'trigger')
 
     def reload_rules(self) -> None:
+        """
+        Run ``udevadm control --reload-rules``
+        """
         self._execute(self._udevadm, 'control', '--reload-rules')
 
     def add_user_plugdev_group(self) -> None:
+        """
+        Add the user to the ``plugdev`` group
+        """
         self._create_group('plugdev')
         self._add_user_to_group(getlogin(), 'plugdev')
 
@@ -53,6 +73,12 @@ class UDevInstaller(object):
         self._execute(self._usermod, '-aG', group, user)
 
     def copy_udev_rule_files(self, source: str, location: str) -> None:
+        """
+        Copy the udev rules from source to location
+
+        :param source: The path to the source directory containing the rules
+        :param location: The path to the directory to copy the rules to
+        """
         src_dir_path = source
         for rules_file_name in listdir(_resource_path(src_dir_path)):
             if '.rules' in rules_file_name:
