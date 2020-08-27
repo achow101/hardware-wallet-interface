@@ -68,7 +68,7 @@ jobs:
             stage: lint
             install:
                 - pip install mypy
-            script: mypy --strict hwilib/base58.py hwilib/errors.py hwilib/serializations.py hwilib/hwwclient.py hwilib/key.py hwilib/descriptor.py hwilib/udevinstaller.py
+            script: mypy --strict hwilib/base58.py hwilib/errors.py hwilib/serializations.py hwilib/hwwclient.py hwilib/key.py hwilib/descriptor.py hwilib/udevinstaller.py hwilib/commands.py
         -   name: Run non-device tests only
             stage: test
             install:
