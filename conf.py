@@ -14,7 +14,7 @@ import os
 import sys
 import sphinx_rtd_theme
 
-sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('.'))
 
 
 # -- Project information -----------------------------------------------------
@@ -36,10 +36,11 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinxcontrib.autoprogram",
     "sphinx_rtd_theme",
+    "sphinx.ext.autosummary",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ['docs/_templates']
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -70,3 +71,8 @@ autoclass_content = "both"
 
 # Mock these imports
 autodoc_mock_imports = ["hid", "ecdsa", "pyaes", "mnemonic", "typing_extensions", "usb1", "PySide2"]
+
+# Autogenerate API docs
+autosummary_generate = True
+
+master_doc = "README"
