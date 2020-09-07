@@ -138,7 +138,11 @@ class ColdcardDevice:
         # collect response, framed in the same manner
         resp = b''
         while 1:
-            buf = self.dev.read(64, timeout_ms=(timeout or 0))
+            try:
+                buf = self.dev.read(64, timeout_ms=(timeout or 0))
+            except OSError:
+                print("Got OSError, error from device: {}".format(self.dev.error()), file=sys.stderr)
+                raise
 
             assert buf, "timeout reading USB EP"
 
