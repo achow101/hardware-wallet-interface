@@ -48,7 +48,7 @@ def enumerate(password=''):
         try:
             imported_dev = importlib.import_module('.devices.' + module, __package__)
             result.extend(imported_dev.enumerate(password))
-        except ImportError:
+        except ImportError as e:
             pass # Ignore ImportErrors, the user may not have all device dependencies installed
     return result
 
