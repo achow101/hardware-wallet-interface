@@ -344,8 +344,8 @@ class UnixSimulatorPipe:
 
     def __init__(self, path):
         import socket, atexit
-        self.pipe = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
         try:
+            self.pipe = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
             self.pipe.connect(path)
         except Exception:
             self.close()
