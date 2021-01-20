@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 import argparse
+import os
 import sys
 import unittest
 
@@ -84,6 +85,20 @@ else:
     args.keepkey = False if args.keepkey is None else args.keepkey
     args.bitbox = False if args.bitbox is None else args.bitbox
     args.ledger = False if args.ledger is None else args.ledger
+
+# Check build environment variables
+if os.getenv("BUILD_TREZOR_1") is not None:
+    args.trezor = True
+if os.getenv("BUILD_TREZOR_T") is not None:
+    args.trezor_t = True
+if os.getenv("BUILD_COLDCARD") is not None:
+    args.coldcard = True
+if os.getenv("BUILD_BITBOX01") is not None:
+    args.bitbox = True
+if os.getenv("BUILD_LEDGER") is not None:
+    args.ledger = True
+if os.getenv("BUILD_KEEPKEY") is not None:
+    args.keepkey = True
 
 if args.trezor or args.trezor_t or args.coldcard or args.ledger or args.keepkey or args.bitbox:
     # Start bitcoind
