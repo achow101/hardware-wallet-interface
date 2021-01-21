@@ -54,20 +54,23 @@ parser.add_argument('--all', help='Run tests on all existing simulators', defaul
 parser.add_argument('--bitcoind', help='Path to bitcoind', default='work/bitcoin/src/bitcoind')
 parser.add_argument('--interface', help='Which interface to send commands over', choices=['library', 'cli', 'bindist', 'stdin'], default='library')
 
+parser.add_argument("--device-only", help="Only run device tests", action="store_true")
+
 parser.set_defaults(trezor=None, trezor_t=None, coldcard=None, keepkey=None, bitbox=None, ledger=None)
 args = parser.parse_args()
 
 # Run tests
 success = True
 suite = unittest.TestSuite()
-suite.addTests(unittest.defaultTestLoader.loadTestsFromTestCase(TestDescriptor))
-suite.addTests(unittest.defaultTestLoader.loadTestsFromTestCase(TestSegwitAddress))
-suite.addTests(unittest.defaultTestLoader.loadTestsFromTestCase(TestPSBT))
-suite.addTests(unittest.defaultTestLoader.loadTestsFromTestCase(TestBase58))
-suite.addTests(unittest.defaultTestLoader.loadTestsFromTestCase(TestBIP32))
-if sys.platform.startswith("linux"):
-    suite.addTests(unittest.defaultTestLoader.loadTestsFromTestCase(TestUdevRulesInstaller))
-success = unittest.TextTestRunner(stream=sys.stdout, verbosity=2).run(suite).wasSuccessful()
+if not args.device_only:
+    suite.addTests(unittest.defaultTestLoader.loadTestsFromTestCase(TestDescriptor))
+    suite.addTests(unittest.defaultTestLoader.loadTestsFromTestCase(TestSegwitAddress))
+    suite.addTests(unittest.defaultTestLoader.loadTestsFromTestCase(TestPSBT))
+    suite.addTests(unittest.defaultTestLoader.loadTestsFromTestCase(TestBase58))
+    suite.addTests(unittest.defaultTestLoader.loadTestsFromTestCase(TestBIP32))
+    if sys.platform.startswith("linux"):
+        suite.addTests(unittest.defaultTestLoader.loadTestsFromTestCase(TestUdevRulesInstaller))
+    success = unittest.TextTestRunner(stream=sys.stdout, verbosity=2).run(suite).wasSuccessful()
 
 if args.all:
     # Default all true unless overridden
