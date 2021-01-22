@@ -202,33 +202,35 @@ if [[ -n ${BUILD_LEDGER} ]]; then
     cd ..
 fi
 
-# Clone bitcoind if it doesn't exist, or update it if it does
-bitcoind_setup_needed=false
-if [ ! -d "bitcoin" ]; then
-    git clone https://github.com/bitcoin/bitcoin.git
-    cd bitcoin
-    bitcoind_setup_needed=true
-else
-    cd bitcoin
-    git fetch
-
-    # Determine if we need to pull. From https://stackoverflow.com/a/3278427
-    UPSTREAM=${1:-'@{u}'}
-    LOCAL=$(git rev-parse @)
-    REMOTE=$(git rev-parse "$UPSTREAM")
-    BASE=$(git merge-base @ "$UPSTREAM")
-
-    if [ $LOCAL = $REMOTE ]; then
-        echo "Up-to-date"
-    elif [ $LOCAL = $BASE ]; then
-        git pull
+if [[ -n ${BUILD_BITCOIND} ]]; then
+    # Clone bitcoind if it doesn't exist, or update it if it does
+    bitcoind_setup_needed=false
+    if [ ! -d "bitcoin" ]; then
+        git clone https://github.com/bitcoin/bitcoin.git
+        cd bitcoin
         bitcoind_setup_needed=true
-    fi
-fi
+    else
+        cd bitcoin
+        git fetch
 
-# Build bitcoind. This is super slow, but it is cached so it runs fairly quickly.
-if [ "$bitcoind_setup_needed" == true ] ; then
-    ./autogen.sh
-    ./configure --with-incompatible-bdb --with-miniupnpc=no --without-gui --disable-zmq --disable-tests --disable-bench --with-libs=no --with-utils=no
+        # Determine if we need to pull. From https://stackoverflow.com/a/3278427
+        UPSTREAM=${1:-'@{u}'}
+        LOCAL=$(git rev-parse @)
+        REMOTE=$(git rev-parse "$UPSTREAM")
+        BASE=$(git merge-base @ "$UPSTREAM")
+
+        if [ $LOCAL = $REMOTE ]; then
+            echo "Up-to-date"
+        elif [ $LOCAL = $BASE ]; then
+            git pull
+            bitcoind_setup_needed=true
+        fi
+    fi
+
+    # Build bitcoind. This is super slow, but it is cached so it runs fairly quickly.
+    if [ "$bitcoind_setup_needed" == true ] ; then
+        ./autogen.sh
+        ./configure --with-incompatible-bdb --with-miniupnpc=no --without-gui --disable-zmq --disable-tests --disable-bench --with-libs=no --with-utils=no
+    fi
+    make src/bitcoind
 fi
-make -j$(nproc) src/bitcoind
