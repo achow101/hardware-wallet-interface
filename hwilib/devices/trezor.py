@@ -277,6 +277,13 @@ class TrezorClient(HardwareWalletClient):
 
     @trezor_exception
     def sign_tx(self, tx: PSBT) -> PSBT:
+        """
+        Sign a transaction with the Trezor. There are some limitations to what transactions can be signed.
+
+        - Multisig inputs are limited to at most n-of-15 multisigs. This is a firmware limitation.
+        - Transactions with arbitrary input scripts (scriptPubKey, redeemScript, or witnessScript) and arbitrary output scripts cannot be signed. This is a firmware limitation.
+        - Send-to-self transactions will result in no prompt for outputs as all outputs will be detected as change.
+        """
         self._check_unlocked()
 
         # Get this devices master key fingerprint
@@ -624,6 +631,11 @@ class TrezorClient(HardwareWalletClient):
         return True
 
     def backup_device(self, label: str = "", passphrase: str = "") -> bool:
+        """
+        Trezor devices do not support backing up via software.
+
+        "raises UnavailableActionError: Always, this function is unavailable
+        """
         raise UnavailableActionError('The {} does not support creating a backup via software'.format(self.type))
 
     @trezor_exception
