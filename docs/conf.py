@@ -68,5 +68,8 @@ autodoc_member_order = "bysource"
 # Show both class and init docstring
 autoclass_content = "both"
 
+# Inherit parent class docstrings
+autoclass_inherit_docstrings = True
+
 # Mock these imports
 autodoc_mock_imports = ["hid", "ecdsa", "pyaes", "mnemonic", "typing_extensions", "usb1", "PySide2"]
