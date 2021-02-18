@@ -1,9 +1,17 @@
+"""
+Common Classes and Utilities
+****************************
+"""
+
 from enum import Enum
 
 from typing import Union
 
 
 class Chain(Enum):
+    """
+    The blockchain network to use
+    """
     MAIN = 0
     TEST = 1
     REGTEST = 2
