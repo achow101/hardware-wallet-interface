@@ -1,8 +1,3 @@
-container:
-  dockerfile: ci/cirrus.Dockerfile
-  docker_arguments:
-    build-arg: $CIRRUS_BUILD_ID
-
 device_matrix_template: &DEVICE_MATRIX_TEMPLATE
   - env:
       DEVICE: --trezor-1
@@ -23,10 +18,14 @@ dist_cache_template: &DIST_CACHE_TEMPLATE
     fingerprint_script: echo $CIRRUS_BUILD_ID dist
 
 lint_task:
+  container:
+    dockerfile: ci/lint.Dockerfile
   test_script:
     - flake8
 
 basic_test_task:
+  container:
+    dockerfile: ci/lint.Dockerfile
   install_script:
     - poetry install
   matrix:
@@ -76,6 +75,10 @@ dist_builder_task:
     - sha256sum dist/*
 
 dist_test_task:
+  container:
+    dockerfile: ci/cirrus.Dockerfile
+    docker_arguments:
+      build-arg: $CIRRUS_BUILD_ID
   depends_on: dist_builder
   matrix:
     << : *DEVICE_MATRIX_TEMPLATE
@@ -94,6 +97,10 @@ dist_test_task:
     failed_script: tail -v -n +1 test/*.std*
 
 device_test_task:
+  container:
+    dockerfile: ci/cirrus.Dockerfile
+    docker_arguments:
+      build-arg: $CIRRUS_BUILD_ID
   matrix:
     << : *DEVICE_MATRIX_TEMPLATE
   matrix:
