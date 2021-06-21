@@ -42,6 +42,7 @@ from .descriptor import (
     Descriptor,
     parse_descriptor,
     MultisigDescriptor,
+    TRDescriptor,
     PKHDescriptor,
     PubkeyProvider,
     SHDescriptor,
