@@ -3,6 +3,7 @@
 from hwilib.descriptor import (
     parse_descriptor,
     MultisigDescriptor,
+    TRDescriptor,
     SHDescriptor,
     PKHDescriptor,
     WPKHDescriptor,
@@ -25,6 +26,20 @@ class TestDescriptor(unittest.TestCase):
         self.assertEqual(desc.to_string_no_checksum(), d)
         e = desc.expand(0)
         self.assertEqual(e.output_script, unhexlify("0014d95fc47eada9e4c3cf59a2cbf9e96517c3ba2efa"))
+        self.assertEqual(e.redeem_script, None)
+        self.assertEqual(e.witness_script, None)
+
+    def test_parse_taproot(self):
+        d = "tr([00000001/84h/1h/0h]tpubD6NzVbkrYhZ4WaWSyoBvQwbpLkojyoTZPRsgXELWz3Popb3qkjcJyJUGLnL4qHHoQvao8ESaAstxYSnhyswJ76uZPStJRJCTKvosUCJZL5B/0/0)"
+        desc = parse_descriptor(d)
+        self.assertTrue(isinstance(desc, TRDescriptor))
+        self.assertEqual(desc.pubkeys[0].origin.fingerprint.hex(), "00000001")
+        self.assertEqual(desc.pubkeys[0].origin.get_derivation_path(), "m/84h/1h/0h")
+        self.assertEqual(desc.pubkeys[0].pubkey, "tpubD6NzVbkrYhZ4WaWSyoBvQwbpLkojyoTZPRsgXELWz3Popb3qkjcJyJUGLnL4qHHoQvao8ESaAstxYSnhyswJ76uZPStJRJCTKvosUCJZL5B")
+        self.assertEqual(desc.pubkeys[0].deriv_path, "/0/0")
+        self.assertEqual(desc.to_string_no_checksum(), d)
+        e = desc.expand(0)
+        self.assertEqual(e.output_script, unhexlify("5120c97dc3f4420402e01a113984311bf4a1b8de376cac0bdcfaf1b3ac81f13433c7"))
         self.assertEqual(e.redeem_script, None)
         self.assertEqual(e.witness_script, None)
 
