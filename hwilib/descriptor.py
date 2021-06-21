@@ -376,6 +376,24 @@ class WSHDescriptor(Descriptor):
         return ExpandedScripts(script, None, witness_script)
 
 
+class TRDescriptor(Descriptor):
+    """
+    A descriptor for ``tr()`` descriptors. For now, only single key things.
+    """
+    def __init__(
+        self,
+        pubkey: PubkeyProvider
+    ):
+        """
+        :param pubkey: The :class:`PubkeyProvider` that is the internal pubkey for this descriptor
+        """
+        super().__init__([pubkey], None, "tr")
+        self.pubkeys[0].xonly = True
+
+    def expand(self, pos: int) -> ExpandedScripts:
+        script = b"\x51\x20" + self.pubkeys[0].get_pubkey_bytes(pos)
+        return ExpandedScripts(script, None, None)
+
 def _get_func_expr(s: str) -> Tuple[str, str]:
     """
     Get the function name and then the expression inside
