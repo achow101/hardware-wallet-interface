@@ -440,6 +440,8 @@ class _ParseDescriptorContext(Enum):
     P2WSH = 3
     """Within a ``wsh()`` descriptor"""
 
+    P2TR = 4
+    """Within a ``tr()`` descriptor"""
 
 def _parse_descriptor(desc: str, ctx: '_ParseDescriptorContext') -> 'Descriptor':
     """
@@ -498,6 +500,12 @@ def _parse_descriptor(desc: str, ctx: '_ParseDescriptorContext') -> 'Descriptor'
         return WSHDescriptor(subdesc)
     elif func == "wsh":
         raise ValueError("Can only have wsh() at top level or inside sh()")
+    if ctx == _ParseDescriptorContext.TOP and func == "tr":
+        internal_key, expr = parse_pubkey(expr)
+        if expr:
+            # TODO: Allow more than just single key tr
+            raise ValueError("More than one pubkey in tr descriptor")
+        return TRDescriptor(internal_key)
     if ctx == _ParseDescriptorContext.P2SH:
         raise ValueError("A function is needed within P2SH")
     elif ctx == _ParseDescriptorContext.P2WSH:
