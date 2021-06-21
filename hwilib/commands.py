@@ -475,7 +475,7 @@ def displayaddress(
                 addr_type = AddressType.SH_WIT
             elif not is_sh and is_wpkh:
                 addr_type = AddressType.WIT
-            elif instance(descriptor, TRDescriptor):
+            elif isinstance(descriptor, TRDescriptor):
                 addr_type = AddressType.TAP
             return {"address": client.display_singlesig_address(pubkey.get_full_derivation_path(0), addr_type)}
     raise BadArgumentError("Missing both path and descriptor")
