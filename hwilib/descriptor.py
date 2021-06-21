@@ -100,16 +100,19 @@ class PubkeyProvider(object):
         self,
         origin: Optional['KeyOriginInfo'],
         pubkey: str,
-        deriv_path: Optional[str]
+        deriv_path: Optional[str],
+        xonly: bool = False
     ) -> None:
         """
         :param origin: The key origin if one is available
         :param pubkey: The public key. Either a hex string or a serialized extended pubkey
         :param deriv_path: Additional derivation path if the pubkey is an extended pubkey
+        :param xonly: Whether to produce X-only pubkeys
         """
         self.origin = origin
         self.pubkey = pubkey
         self.deriv_path = deriv_path
+        self.xonly = xonly
 
         # Make ExtendedKey from pubkey if it isn't hex
         self.extkey = None
@@ -166,9 +169,12 @@ class PubkeyProvider(object):
                     path_str = path_str[-1] + str(pos)
                 path = parse_path(path_str)
                 child_key = self.extkey.derive_pub_path(path)
-                return child_key.pubkey
+                pubkey = child_key.pubkey
             else:
-                return self.extkey.pubkey
+                pubkey = self.extkey.pubkey
+            if self.xonly:
+                return pubkey[1:33]
+            return pubkey
         return unhexlify(self.pubkey)
 
     def get_full_derivation_path(self, pos: int) -> str:
