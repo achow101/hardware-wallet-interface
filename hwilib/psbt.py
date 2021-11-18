@@ -21,13 +21,16 @@ from typing import (
 from .key import KeyOriginInfo
 from .errors import PSBTSerializationError
 from .tx import (
+    COutPoint,
     CTransaction,
+    CTxIn,
     CTxInWitness,
     CTxOut,
 )
 from ._serialize import (
     deser_compact_size,
     deser_string,
+    deser_uint256,
     Readable,
     ser_compact_size,
     ser_string,
@@ -1008,3 +1011,35 @@ class PSBT(object):
         if self.fallback_locktime is not None:
             return self.fallback_locktime
         return 0
+
+    def get_unsigned_tx(self) -> CTransaction:
+        """
+        Get the unsigned transaction represented by this PSBT
+
+        :return: A CTransaction
+        """
+        if self.tx is not None:
+            return self.tx
+
+        assert self.tx_version is not None
+
+        tx = CTransaction()
+        tx.nVersion = self.tx_version
+        self.nLockTime = self.compute_lock_time()
+
+        for psbt_in in self.inputs:
+            assert psbt_in.prev_txid is not None
+            assert psbt_in.prev_out is not None
+            assert psbt_in.sequence is not None
+
+            txin = CTxIn(COutPoint(deser_uint256(psbt_in.prev_txid), psbt_in.prev_out), b"", psbt_in.sequence)
+            tx.vin.append(txin)
+
+        for psbt_out in self.outputs:
+            assert psbt_out.amount is not None
+
+            txout = CTxOut(psbt_out.amount, psbt_out.script)
+            tx.vout.append(txout)
+
+        tx.rehash()
+        return tx
