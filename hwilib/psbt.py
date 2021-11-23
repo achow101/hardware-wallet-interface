@@ -1043,3 +1043,13 @@ class PSBT(object):
 
         tx.rehash()
         return tx
+
+    def convert_to_v2(self) -> None:
+        """
+        Sets this PSBT to version 2
+        """
+        self.version = 2
+        for psbt_in in self.inputs:
+            psbt_in.version = 2
+        for psbt_out in self.outputs:
+            psbt_out.version = 2
