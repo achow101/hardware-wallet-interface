@@ -24,7 +24,7 @@ SUPPORTS_MIXED = {'coldcard', 'trezor_1', 'digitalbitbox', 'keepkey', 'trezor_t'
 SUPPORTS_MULTISIG = {'ledger', 'trezor_1', 'digitalbitbox', 'keepkey', 'coldcard', 'trezor_t', 'jade'}
 SUPPORTS_EXTERNAL = {'ledger', 'trezor_1', 'digitalbitbox', 'keepkey', 'coldcard', 'trezor_t', 'jade'}
 SUPPORTS_OP_RETURN = {'ledger', 'digitalbitbox', 'trezor_1', 'trezor_t', 'keepkey', 'jade'}
-SUPPORTS_TAPROOT = {"trezor_1", "trezor_t"}
+SUPPORTS_TAPROOT = {"trezor_1", "trezor_t", "ledger"}
 
 # Class for emulator control
 class DeviceEmulator():
