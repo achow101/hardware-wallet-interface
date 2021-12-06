@@ -7,3 +7,4 @@ Modified version of the [ledgercomm library](https://github.com/LedgerHQ/ledgerc
 The changes are only to make it work on Python 3.6 as the official library requires 3.8+
 
 * Remove usage of `typing.Literal`
+* Change to using relative imports instead of `ledgercomm`
