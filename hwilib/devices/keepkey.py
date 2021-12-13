@@ -3,6 +3,7 @@ Keepkey
 *******
 """
 
+from ..common import Chain
 from ..errors import (
     DEVICE_NOT_INITIALIZED,
     DeviceNotReadyError,
@@ -141,7 +142,7 @@ class KeepkeyDebugLinkState(DebugLinkState): # type: ignore
 
 
 class KeepkeyClient(TrezorClient):
-    def __init__(self, path: str, password: str = "", expert: bool = False) -> None:
+    def __init__(self, path: str, password: str = "", expert: bool = False, chain: Chain = Chain.MAIN) -> None:
         """
         The `KeepkeyClient` is a `HardwareWalletClient` for interacting with the Keepkey.
 
@@ -159,7 +160,7 @@ class KeepkeyClient(TrezorClient):
         if path.startswith("udp"):
             model.default_mapping.register(KeepkeyDebugLinkState)
 
-        super(KeepkeyClient, self).__init__(path, password, expert, KEEPKEY_HID_IDS, KEEPKEY_WEBUSB_IDS, KEEPKEY_SIMULATOR_PATH, model)
+        super(KeepkeyClient, self).__init__(path, password, expert, chain, KEEPKEY_HID_IDS, KEEPKEY_WEBUSB_IDS, KEEPKEY_SIMULATOR_PATH, model)
         self.type = 'Keepkey'
 
     def can_sign_taproot(self) -> bool:
