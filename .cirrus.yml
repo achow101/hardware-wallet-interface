@@ -281,7 +281,7 @@ task:
 task:
   matrix:
     - container:
-        dockerfile: ci/cirrus.Dockerfile
+        dockerfile: ci/py36.Dockerfile
       env:
         PYTHON: 3.6
     - container:
