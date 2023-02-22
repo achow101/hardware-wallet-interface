@@ -13,7 +13,7 @@ RUN apt-get install -y \
     qemu-user-static \
     swig
 
-RUN pip install poetry flake8
+RUN pip install poetry>=1.3.2 flake8
 
 ENV LC_ALL=C.UTF-8
 ENV LANG=C.UTF-8

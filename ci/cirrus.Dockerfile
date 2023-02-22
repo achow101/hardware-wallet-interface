@@ -38,7 +38,7 @@ RUN apt-get install -y \
     qemu-user-static \
     swig
 
-RUN pip install poetry flake8
+RUN pip install poetry>=1.3.2 flake8
 RUN wget https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/rustup-init
 RUN chmod +x rustup-init && ./rustup-init -y
 ENV PATH="/root/.cargo/bin:$PATH"
