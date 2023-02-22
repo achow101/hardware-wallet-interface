@@ -90,7 +90,7 @@ if [[ -n ${build_trezor_1} || -n ${build_trezor_t} ]]; then
         poetry install
         cd legacy
         export EMULATOR=1 TREZOR_TRANSPORT_V1=1 DEBUG_LINK=1 HEADLESS=1 PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
-        poetry run pip install -U protobuf
+        poetry run pip install protobuf==4.21.12
         poetry run script/setup
         poetry run script/cibuild
         # Delete any emulator.img file
@@ -188,8 +188,8 @@ if [[ -n ${build_bitbox01} ]]; then
 fi
 
 if [[ -n ${build_keepkey} ]]; then
-    poetry run pip install protobuf
-    pip install protobuf
+    poetry run pip install protobuf==4.21.12
+    pip install protobuf==4.21.12
     # Clone keepkey firmware if it doesn't exist, or update it if it does
     keepkey_setup_needed=false
     if [ ! -d "keepkey-firmware" ]; then
