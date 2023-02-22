@@ -77,6 +77,7 @@ class LedgerEmulator(DeviceEmulator):
             cwd=os.path.dirname(self.emulator_path),
             stderr=self.emulator_stderr,
             start_new_session=True,
+            text=True,
         )
         # Wait for simulator to be up
         while True:
