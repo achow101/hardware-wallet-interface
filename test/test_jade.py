@@ -72,7 +72,7 @@ class JadeEmulator(DeviceEmulator):
                     '-serial', 'pty'
                 ],
                 cwd=self.emulator_path,
-                preexec_fn=os.setsid,
+                start_new_session=True,
                 stdout=self.emulator_stdout_log,
                 stderr=self.emulator_stderr_log,
             )

@@ -56,7 +56,7 @@ class ColdcardSimulator(DeviceEmulator):
             ],
             cwd=os.path.dirname(self.simulator),
             stdout=self.coldcard_log,
-            preexec_fn=os.setsid
+            start_new_session=True,
         )
         # Wait for simulator to be up
         while True:
