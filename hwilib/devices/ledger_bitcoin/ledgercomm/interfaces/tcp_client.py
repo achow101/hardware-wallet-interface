@@ -37,6 +37,7 @@ class TCPClient(Comm):
         self.server: str = server
         self.port: int = port
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket.settimeout(300)
         self.__opened: bool = False
 
     def open(self) -> None:
