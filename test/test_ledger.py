@@ -80,7 +80,7 @@ class LedgerEmulator(DeviceEmulator):
             text=True,
         )
         # Wait for simulator to be up
-        while True:
+        for i in range(600):
             try:
                 enum_res = process_commands(['enumerate'])
                 found = False
@@ -94,6 +94,9 @@ class LedgerEmulator(DeviceEmulator):
                 print(str(e))
                 pass
             time.sleep(0.5)
+        else:
+            # Simulator isn't up after a few minutes, stop.
+            sys.exit(-1)
         atexit.register(self.stop)
 
     def stop(self):
