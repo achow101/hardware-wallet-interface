@@ -45,6 +45,7 @@ ENV PATH="/root/.cargo/bin:$PATH"
 RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v21.12/protoc-21.12-linux-x86_64.zip
 RUN unzip protoc-21.12-linux-x86_64.zip -d /usr/local
 RUN protoc --version
+ENV PYTHONUNBUFFERED=1
 
 ####################
 # Local build/test steps
